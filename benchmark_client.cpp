@@ -75,7 +75,8 @@ void init_packages() {
 		package.add_listitem("item-----5");
 		package.add_listitem(HashUtil::randomString(8192));
 		*/
-		pkgList.push_back(package.SerializeAsString());
+		string s = package.SerializeAsString();
+		pkgList.push_back(s);
 	}
 }
 

@@ -31,7 +31,68 @@ void protobuf_AssignDesc_zpack_2eproto();
 void protobuf_ShutdownFile_zpack_2eproto();
 
 class ZPack;
+class BatchItem;
 
+enum ZPack_Consistency_level {
+  ZPack_Consistency_level_STRONG = 0,
+  ZPack_Consistency_level_WEAK = 1,
+  ZPack_Consistency_level_EVENTUAL = 2
+};
+bool ZPack_Consistency_level_IsValid(int value);
+const ZPack_Consistency_level ZPack_Consistency_level_Consistency_level_MIN = ZPack_Consistency_level_STRONG;
+const ZPack_Consistency_level ZPack_Consistency_level_Consistency_level_MAX = ZPack_Consistency_level_EVENTUAL;
+const int ZPack_Consistency_level_Consistency_level_ARRAYSIZE = ZPack_Consistency_level_Consistency_level_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* ZPack_Consistency_level_descriptor();
+inline const ::std::string& ZPack_Consistency_level_Name(ZPack_Consistency_level value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    ZPack_Consistency_level_descriptor(), value);
+}
+inline bool ZPack_Consistency_level_Parse(
+    const ::std::string& name, ZPack_Consistency_level* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<ZPack_Consistency_level>(
+    ZPack_Consistency_level_descriptor(), name, value);
+}
+enum ZPack_Pack_type {
+  ZPack_Pack_type_SINGLE = 0,
+  ZPack_Pack_type_BATCH_REQ = 1,
+  ZPack_Pack_type_BATCH_RET = 2
+};
+bool ZPack_Pack_type_IsValid(int value);
+const ZPack_Pack_type ZPack_Pack_type_Pack_type_MIN = ZPack_Pack_type_SINGLE;
+const ZPack_Pack_type ZPack_Pack_type_Pack_type_MAX = ZPack_Pack_type_BATCH_RET;
+const int ZPack_Pack_type_Pack_type_ARRAYSIZE = ZPack_Pack_type_Pack_type_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* ZPack_Pack_type_descriptor();
+inline const ::std::string& ZPack_Pack_type_Name(ZPack_Pack_type value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    ZPack_Pack_type_descriptor(), value);
+}
+inline bool ZPack_Pack_type_Parse(
+    const ::std::string& name, ZPack_Pack_type* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<ZPack_Pack_type>(
+    ZPack_Pack_type_descriptor(), name, value);
+}
+enum BatchItem_Consistency_level {
+  BatchItem_Consistency_level_STRONG = 0,
+  BatchItem_Consistency_level_WEAK = 1,
+  BatchItem_Consistency_level_EVENTUAL = 2
+};
+bool BatchItem_Consistency_level_IsValid(int value);
+const BatchItem_Consistency_level BatchItem_Consistency_level_Consistency_level_MIN = BatchItem_Consistency_level_STRONG;
+const BatchItem_Consistency_level BatchItem_Consistency_level_Consistency_level_MAX = BatchItem_Consistency_level_EVENTUAL;
+const int BatchItem_Consistency_level_Consistency_level_ARRAYSIZE = BatchItem_Consistency_level_Consistency_level_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* BatchItem_Consistency_level_descriptor();
+inline const ::std::string& BatchItem_Consistency_level_Name(BatchItem_Consistency_level value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    BatchItem_Consistency_level_descriptor(), value);
+}
+inline bool BatchItem_Consistency_level_Parse(
+    const ::std::string& name, BatchItem_Consistency_level* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<BatchItem_Consistency_level>(
+    BatchItem_Consistency_level_descriptor(), name, value);
+}
 // ===================================================================
 
 class ZPack : public ::google::protobuf::Message {
@@ -85,6 +146,56 @@ class ZPack : public ::google::protobuf::Message {
   ::google::protobuf::Metadata GetMetadata() const;
   
   // nested types ----------------------------------------------------
+  
+  typedef ZPack_Consistency_level Consistency_level;
+  static const Consistency_level STRONG = ZPack_Consistency_level_STRONG;
+  static const Consistency_level WEAK = ZPack_Consistency_level_WEAK;
+  static const Consistency_level EVENTUAL = ZPack_Consistency_level_EVENTUAL;
+  static inline bool Consistency_level_IsValid(int value) {
+    return ZPack_Consistency_level_IsValid(value);
+  }
+  static const Consistency_level Consistency_level_MIN =
+    ZPack_Consistency_level_Consistency_level_MIN;
+  static const Consistency_level Consistency_level_MAX =
+    ZPack_Consistency_level_Consistency_level_MAX;
+  static const int Consistency_level_ARRAYSIZE =
+    ZPack_Consistency_level_Consistency_level_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor*
+  Consistency_level_descriptor() {
+    return ZPack_Consistency_level_descriptor();
+  }
+  static inline const ::std::string& Consistency_level_Name(Consistency_level value) {
+    return ZPack_Consistency_level_Name(value);
+  }
+  static inline bool Consistency_level_Parse(const ::std::string& name,
+      Consistency_level* value) {
+    return ZPack_Consistency_level_Parse(name, value);
+  }
+  
+  typedef ZPack_Pack_type Pack_type;
+  static const Pack_type SINGLE = ZPack_Pack_type_SINGLE;
+  static const Pack_type BATCH_REQ = ZPack_Pack_type_BATCH_REQ;
+  static const Pack_type BATCH_RET = ZPack_Pack_type_BATCH_RET;
+  static inline bool Pack_type_IsValid(int value) {
+    return ZPack_Pack_type_IsValid(value);
+  }
+  static const Pack_type Pack_type_MIN =
+    ZPack_Pack_type_Pack_type_MIN;
+  static const Pack_type Pack_type_MAX =
+    ZPack_Pack_type_Pack_type_MAX;
+  static const int Pack_type_ARRAYSIZE =
+    ZPack_Pack_type_Pack_type_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor*
+  Pack_type_descriptor() {
+    return ZPack_Pack_type_descriptor();
+  }
+  static inline const ::std::string& Pack_type_Name(Pack_type value) {
+    return ZPack_Pack_type_Name(value);
+  }
+  static inline bool Pack_type_Parse(const ::std::string& name,
+      Pack_type* value) {
+    return ZPack_Pack_type_Parse(name, value);
+  }
   
   // accessors -------------------------------------------------------
   
@@ -164,6 +275,64 @@ class ZPack : public ::google::protobuf::Message {
   inline ::google::protobuf::int32 replicanum() const;
   inline void set_replicanum(::google::protobuf::int32 value);
   
+  // optional bytes client_ip = 9;
+  inline bool has_client_ip() const;
+  inline void clear_client_ip();
+  static const int kClientIpFieldNumber = 9;
+  inline const ::std::string& client_ip() const;
+  inline void set_client_ip(const ::std::string& value);
+  inline void set_client_ip(const char* value);
+  inline void set_client_ip(const void* value, size_t size);
+  inline ::std::string* mutable_client_ip();
+  inline ::std::string* release_client_ip();
+  
+  // optional int32 client_port = 10;
+  inline bool has_client_port() const;
+  inline void clear_client_port();
+  static const int kClientPortFieldNumber = 10;
+  inline ::google::protobuf::int32 client_port() const;
+  inline void set_client_port(::google::protobuf::int32 value);
+  
+  // optional int64 seq_num = 11;
+  inline bool has_seq_num() const;
+  inline void clear_seq_num();
+  static const int kSeqNumFieldNumber = 11;
+  inline ::google::protobuf::int64 seq_num() const;
+  inline void set_seq_num(::google::protobuf::int64 value);
+  
+  // optional int32 max_wait_time = 12;
+  inline bool has_max_wait_time() const;
+  inline void clear_max_wait_time();
+  static const int kMaxWaitTimeFieldNumber = 12;
+  inline ::google::protobuf::int32 max_wait_time() const;
+  inline void set_max_wait_time(::google::protobuf::int32 value);
+  
+  // optional .ZPack.Consistency_level consistency = 13;
+  inline bool has_consistency() const;
+  inline void clear_consistency();
+  static const int kConsistencyFieldNumber = 13;
+  inline ::ZPack_Consistency_level consistency() const;
+  inline void set_consistency(::ZPack_Consistency_level value);
+  
+  // optional .ZPack.Pack_type pack_type = 14 [default = SINGLE];
+  inline bool has_pack_type() const;
+  inline void clear_pack_type();
+  static const int kPackTypeFieldNumber = 14;
+  inline ::ZPack_Pack_type pack_type() const;
+  inline void set_pack_type(::ZPack_Pack_type value);
+  
+  // repeated .BatchItem batch_list = 15;
+  inline int batch_list_size() const;
+  inline void clear_batch_list();
+  static const int kBatchListFieldNumber = 15;
+  inline const ::BatchItem& batch_list(int index) const;
+  inline ::BatchItem* mutable_batch_list(int index);
+  inline ::BatchItem* add_batch_list();
+  inline const ::google::protobuf::RepeatedPtrField< ::BatchItem >&
+      batch_list() const;
+  inline ::google::protobuf::RepeatedPtrField< ::BatchItem >*
+      mutable_batch_list();
+  
   // @@protoc_insertion_point(class_scope:ZPack)
  private:
   inline void set_has_opcode();
@@ -182,6 +351,18 @@ class ZPack : public ::google::protobuf::Message {
   inline void clear_has_newvalnull();
   inline void set_has_replicanum();
   inline void clear_has_replicanum();
+  inline void set_has_client_ip();
+  inline void clear_has_client_ip();
+  inline void set_has_client_port();
+  inline void clear_has_client_port();
+  inline void set_has_seq_num();
+  inline void clear_has_seq_num();
+  inline void set_has_max_wait_time();
+  inline void clear_has_max_wait_time();
+  inline void set_has_consistency();
+  inline void clear_has_consistency();
+  inline void set_has_pack_type();
+  inline void clear_has_pack_type();
   
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
   
@@ -193,9 +374,16 @@ class ZPack : public ::google::protobuf::Message {
   bool valnull_;
   bool newvalnull_;
   ::google::protobuf::int32 replicanum_;
+  ::std::string* client_ip_;
+  ::google::protobuf::int64 seq_num_;
+  ::google::protobuf::int32 client_port_;
+  ::google::protobuf::int32 max_wait_time_;
+  int consistency_;
+  int pack_type_;
+  ::google::protobuf::RepeatedPtrField< ::BatchItem > batch_list_;
   
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(8 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(15 + 31) / 32];
   
   friend void  protobuf_AddDesc_zpack_2eproto();
   friend void protobuf_AssignDesc_zpack_2eproto();
@@ -203,6 +391,185 @@ class ZPack : public ::google::protobuf::Message {
   
   void InitAsDefaultInstance();
   static ZPack* default_instance_;
+};
+// -------------------------------------------------------------------
+
+class BatchItem : public ::google::protobuf::Message {
+ public:
+  BatchItem();
+  virtual ~BatchItem();
+  
+  BatchItem(const BatchItem& from);
+  
+  inline BatchItem& operator=(const BatchItem& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  
+  inline const ::google::protobuf::UnknownFieldSet& unknown_fields() const {
+    return _unknown_fields_;
+  }
+  
+  inline ::google::protobuf::UnknownFieldSet* mutable_unknown_fields() {
+    return &_unknown_fields_;
+  }
+  
+  static const ::google::protobuf::Descriptor* descriptor();
+  static const BatchItem& default_instance();
+  
+  void Swap(BatchItem* other);
+  
+  // implements Message ----------------------------------------------
+  
+  BatchItem* New() const;
+  void CopyFrom(const ::google::protobuf::Message& from);
+  void MergeFrom(const ::google::protobuf::Message& from);
+  void CopyFrom(const BatchItem& from);
+  void MergeFrom(const BatchItem& from);
+  void Clear();
+  bool IsInitialized() const;
+  
+  int ByteSize() const;
+  bool MergePartialFromCodedStream(
+      ::google::protobuf::io::CodedInputStream* input);
+  void SerializeWithCachedSizes(
+      ::google::protobuf::io::CodedOutputStream* output) const;
+  ::google::protobuf::uint8* SerializeWithCachedSizesToArray(::google::protobuf::uint8* output) const;
+  int GetCachedSize() const { return _cached_size_; }
+  private:
+  void SharedCtor();
+  void SharedDtor();
+  void SetCachedSize(int size) const;
+  public:
+  
+  ::google::protobuf::Metadata GetMetadata() const;
+  
+  // nested types ----------------------------------------------------
+  
+  typedef BatchItem_Consistency_level Consistency_level;
+  static const Consistency_level STRONG = BatchItem_Consistency_level_STRONG;
+  static const Consistency_level WEAK = BatchItem_Consistency_level_WEAK;
+  static const Consistency_level EVENTUAL = BatchItem_Consistency_level_EVENTUAL;
+  static inline bool Consistency_level_IsValid(int value) {
+    return BatchItem_Consistency_level_IsValid(value);
+  }
+  static const Consistency_level Consistency_level_MIN =
+    BatchItem_Consistency_level_Consistency_level_MIN;
+  static const Consistency_level Consistency_level_MAX =
+    BatchItem_Consistency_level_Consistency_level_MAX;
+  static const int Consistency_level_ARRAYSIZE =
+    BatchItem_Consistency_level_Consistency_level_ARRAYSIZE;
+  static inline const ::google::protobuf::EnumDescriptor*
+  Consistency_level_descriptor() {
+    return BatchItem_Consistency_level_descriptor();
+  }
+  static inline const ::std::string& Consistency_level_Name(Consistency_level value) {
+    return BatchItem_Consistency_level_Name(value);
+  }
+  static inline bool Consistency_level_Parse(const ::std::string& name,
+      Consistency_level* value) {
+    return BatchItem_Consistency_level_Parse(name, value);
+  }
+  
+  // accessors -------------------------------------------------------
+  
+  // optional bytes client_ip = 1;
+  inline bool has_client_ip() const;
+  inline void clear_client_ip();
+  static const int kClientIpFieldNumber = 1;
+  inline const ::std::string& client_ip() const;
+  inline void set_client_ip(const ::std::string& value);
+  inline void set_client_ip(const char* value);
+  inline void set_client_ip(const void* value, size_t size);
+  inline ::std::string* mutable_client_ip();
+  inline ::std::string* release_client_ip();
+  
+  // optional int32 client_port = 2;
+  inline bool has_client_port() const;
+  inline void clear_client_port();
+  static const int kClientPortFieldNumber = 2;
+  inline ::google::protobuf::int32 client_port() const;
+  inline void set_client_port(::google::protobuf::int32 value);
+  
+  // optional int64 seq_num = 3;
+  inline bool has_seq_num() const;
+  inline void clear_seq_num();
+  static const int kSeqNumFieldNumber = 3;
+  inline ::google::protobuf::int64 seq_num() const;
+  inline void set_seq_num(::google::protobuf::int64 value);
+  
+  // optional bytes key = 4;
+  inline bool has_key() const;
+  inline void clear_key();
+  static const int kKeyFieldNumber = 4;
+  inline const ::std::string& key() const;
+  inline void set_key(const ::std::string& value);
+  inline void set_key(const char* value);
+  inline void set_key(const void* value, size_t size);
+  inline ::std::string* mutable_key();
+  inline ::std::string* release_key();
+  
+  // optional bytes val = 5;
+  inline bool has_val() const;
+  inline void clear_val();
+  static const int kValFieldNumber = 5;
+  inline const ::std::string& val() const;
+  inline void set_val(const ::std::string& value);
+  inline void set_val(const char* value);
+  inline void set_val(const void* value, size_t size);
+  inline ::std::string* mutable_val();
+  inline ::std::string* release_val();
+  
+  // optional int32 max_wait_time = 6;
+  inline bool has_max_wait_time() const;
+  inline void clear_max_wait_time();
+  static const int kMaxWaitTimeFieldNumber = 6;
+  inline ::google::protobuf::int32 max_wait_time() const;
+  inline void set_max_wait_time(::google::protobuf::int32 value);
+  
+  // optional .BatchItem.Consistency_level consistency = 7;
+  inline bool has_consistency() const;
+  inline void clear_consistency();
+  static const int kConsistencyFieldNumber = 7;
+  inline ::BatchItem_Consistency_level consistency() const;
+  inline void set_consistency(::BatchItem_Consistency_level value);
+  
+  // @@protoc_insertion_point(class_scope:BatchItem)
+ private:
+  inline void set_has_client_ip();
+  inline void clear_has_client_ip();
+  inline void set_has_client_port();
+  inline void clear_has_client_port();
+  inline void set_has_seq_num();
+  inline void clear_has_seq_num();
+  inline void set_has_key();
+  inline void clear_has_key();
+  inline void set_has_val();
+  inline void clear_has_val();
+  inline void set_has_max_wait_time();
+  inline void clear_has_max_wait_time();
+  inline void set_has_consistency();
+  inline void clear_has_consistency();
+  
+  ::google::protobuf::UnknownFieldSet _unknown_fields_;
+  
+  ::std::string* client_ip_;
+  ::google::protobuf::int64 seq_num_;
+  ::std::string* key_;
+  ::google::protobuf::int32 client_port_;
+  ::google::protobuf::int32 max_wait_time_;
+  ::std::string* val_;
+  int consistency_;
+  
+  mutable int _cached_size_;
+  ::google::protobuf::uint32 _has_bits_[(7 + 31) / 32];
+  
+  friend void  protobuf_AddDesc_zpack_2eproto();
+  friend void protobuf_AssignDesc_zpack_2eproto();
+  friend void protobuf_ShutdownFile_zpack_2eproto();
+  
+  void InitAsDefaultInstance();
+  static BatchItem* default_instance_;
 };
 // ===================================================================
 
@@ -567,6 +934,468 @@ inline void ZPack::set_replicanum(::google::protobuf::int32 value) {
   replicanum_ = value;
 }
 
+// optional bytes client_ip = 9;
+inline bool ZPack::has_client_ip() const {
+  return (_has_bits_[0] & 0x00000100u) != 0;
+}
+inline void ZPack::set_has_client_ip() {
+  _has_bits_[0] |= 0x00000100u;
+}
+inline void ZPack::clear_has_client_ip() {
+  _has_bits_[0] &= ~0x00000100u;
+}
+inline void ZPack::clear_client_ip() {
+  if (client_ip_ != &::google::protobuf::internal::kEmptyString) {
+    client_ip_->clear();
+  }
+  clear_has_client_ip();
+}
+inline const ::std::string& ZPack::client_ip() const {
+  return *client_ip_;
+}
+inline void ZPack::set_client_ip(const ::std::string& value) {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::kEmptyString) {
+    client_ip_ = new ::std::string;
+  }
+  client_ip_->assign(value);
+}
+inline void ZPack::set_client_ip(const char* value) {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::kEmptyString) {
+    client_ip_ = new ::std::string;
+  }
+  client_ip_->assign(value);
+}
+inline void ZPack::set_client_ip(const void* value, size_t size) {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::kEmptyString) {
+    client_ip_ = new ::std::string;
+  }
+  client_ip_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* ZPack::mutable_client_ip() {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::kEmptyString) {
+    client_ip_ = new ::std::string;
+  }
+  return client_ip_;
+}
+inline ::std::string* ZPack::release_client_ip() {
+  clear_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = client_ip_;
+    client_ip_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+
+// optional int32 client_port = 10;
+inline bool ZPack::has_client_port() const {
+  return (_has_bits_[0] & 0x00000200u) != 0;
+}
+inline void ZPack::set_has_client_port() {
+  _has_bits_[0] |= 0x00000200u;
+}
+inline void ZPack::clear_has_client_port() {
+  _has_bits_[0] &= ~0x00000200u;
+}
+inline void ZPack::clear_client_port() {
+  client_port_ = 0;
+  clear_has_client_port();
+}
+inline ::google::protobuf::int32 ZPack::client_port() const {
+  return client_port_;
+}
+inline void ZPack::set_client_port(::google::protobuf::int32 value) {
+  set_has_client_port();
+  client_port_ = value;
+}
+
+// optional int64 seq_num = 11;
+inline bool ZPack::has_seq_num() const {
+  return (_has_bits_[0] & 0x00000400u) != 0;
+}
+inline void ZPack::set_has_seq_num() {
+  _has_bits_[0] |= 0x00000400u;
+}
+inline void ZPack::clear_has_seq_num() {
+  _has_bits_[0] &= ~0x00000400u;
+}
+inline void ZPack::clear_seq_num() {
+  seq_num_ = GOOGLE_LONGLONG(0);
+  clear_has_seq_num();
+}
+inline ::google::protobuf::int64 ZPack::seq_num() const {
+  return seq_num_;
+}
+inline void ZPack::set_seq_num(::google::protobuf::int64 value) {
+  set_has_seq_num();
+  seq_num_ = value;
+}
+
+// optional int32 max_wait_time = 12;
+inline bool ZPack::has_max_wait_time() const {
+  return (_has_bits_[0] & 0x00000800u) != 0;
+}
+inline void ZPack::set_has_max_wait_time() {
+  _has_bits_[0] |= 0x00000800u;
+}
+inline void ZPack::clear_has_max_wait_time() {
+  _has_bits_[0] &= ~0x00000800u;
+}
+inline void ZPack::clear_max_wait_time() {
+  max_wait_time_ = 0;
+  clear_has_max_wait_time();
+}
+inline ::google::protobuf::int32 ZPack::max_wait_time() const {
+  return max_wait_time_;
+}
+inline void ZPack::set_max_wait_time(::google::protobuf::int32 value) {
+  set_has_max_wait_time();
+  max_wait_time_ = value;
+}
+
+// optional .ZPack.Consistency_level consistency = 13;
+inline bool ZPack::has_consistency() const {
+  return (_has_bits_[0] & 0x00001000u) != 0;
+}
+inline void ZPack::set_has_consistency() {
+  _has_bits_[0] |= 0x00001000u;
+}
+inline void ZPack::clear_has_consistency() {
+  _has_bits_[0] &= ~0x00001000u;
+}
+inline void ZPack::clear_consistency() {
+  consistency_ = 0;
+  clear_has_consistency();
+}
+inline ::ZPack_Consistency_level ZPack::consistency() const {
+  return static_cast< ::ZPack_Consistency_level >(consistency_);
+}
+inline void ZPack::set_consistency(::ZPack_Consistency_level value) {
+  GOOGLE_DCHECK(::ZPack_Consistency_level_IsValid(value));
+  set_has_consistency();
+  consistency_ = value;
+}
+
+// optional .ZPack.Pack_type pack_type = 14 [default = SINGLE];
+inline bool ZPack::has_pack_type() const {
+  return (_has_bits_[0] & 0x00002000u) != 0;
+}
+inline void ZPack::set_has_pack_type() {
+  _has_bits_[0] |= 0x00002000u;
+}
+inline void ZPack::clear_has_pack_type() {
+  _has_bits_[0] &= ~0x00002000u;
+}
+inline void ZPack::clear_pack_type() {
+  pack_type_ = 0;
+  clear_has_pack_type();
+}
+inline ::ZPack_Pack_type ZPack::pack_type() const {
+  return static_cast< ::ZPack_Pack_type >(pack_type_);
+}
+inline void ZPack::set_pack_type(::ZPack_Pack_type value) {
+  GOOGLE_DCHECK(::ZPack_Pack_type_IsValid(value));
+  set_has_pack_type();
+  pack_type_ = value;
+}
+
+// repeated .BatchItem batch_list = 15;
+inline int ZPack::batch_list_size() const {
+  return batch_list_.size();
+}
+inline void ZPack::clear_batch_list() {
+  batch_list_.Clear();
+}
+inline const ::BatchItem& ZPack::batch_list(int index) const {
+  return batch_list_.Get(index);
+}
+inline ::BatchItem* ZPack::mutable_batch_list(int index) {
+  return batch_list_.Mutable(index);
+}
+inline ::BatchItem* ZPack::add_batch_list() {
+  return batch_list_.Add();
+}
+inline const ::google::protobuf::RepeatedPtrField< ::BatchItem >&
+ZPack::batch_list() const {
+  return batch_list_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::BatchItem >*
+ZPack::mutable_batch_list() {
+  return &batch_list_;
+}
+
+// -------------------------------------------------------------------
+
+// BatchItem
+
+// optional bytes client_ip = 1;
+inline bool BatchItem::has_client_ip() const {
+  return (_has_bits_[0] & 0x00000001u) != 0;
+}
+inline void BatchItem::set_has_client_ip() {
+  _has_bits_[0] |= 0x00000001u;
+}
+inline void BatchItem::clear_has_client_ip() {
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline void BatchItem::clear_client_ip() {
+  if (client_ip_ != &::google::protobuf::internal::kEmptyString) {
+    client_ip_->clear();
+  }
+  clear_has_client_ip();
+}
+inline const ::std::string& BatchItem::client_ip() const {
+  return *client_ip_;
+}
+inline void BatchItem::set_client_ip(const ::std::string& value) {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::kEmptyString) {
+    client_ip_ = new ::std::string;
+  }
+  client_ip_->assign(value);
+}
+inline void BatchItem::set_client_ip(const char* value) {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::kEmptyString) {
+    client_ip_ = new ::std::string;
+  }
+  client_ip_->assign(value);
+}
+inline void BatchItem::set_client_ip(const void* value, size_t size) {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::kEmptyString) {
+    client_ip_ = new ::std::string;
+  }
+  client_ip_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* BatchItem::mutable_client_ip() {
+  set_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::kEmptyString) {
+    client_ip_ = new ::std::string;
+  }
+  return client_ip_;
+}
+inline ::std::string* BatchItem::release_client_ip() {
+  clear_has_client_ip();
+  if (client_ip_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = client_ip_;
+    client_ip_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+
+// optional int32 client_port = 2;
+inline bool BatchItem::has_client_port() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void BatchItem::set_has_client_port() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void BatchItem::clear_has_client_port() {
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline void BatchItem::clear_client_port() {
+  client_port_ = 0;
+  clear_has_client_port();
+}
+inline ::google::protobuf::int32 BatchItem::client_port() const {
+  return client_port_;
+}
+inline void BatchItem::set_client_port(::google::protobuf::int32 value) {
+  set_has_client_port();
+  client_port_ = value;
+}
+
+// optional int64 seq_num = 3;
+inline bool BatchItem::has_seq_num() const {
+  return (_has_bits_[0] & 0x00000004u) != 0;
+}
+inline void BatchItem::set_has_seq_num() {
+  _has_bits_[0] |= 0x00000004u;
+}
+inline void BatchItem::clear_has_seq_num() {
+  _has_bits_[0] &= ~0x00000004u;
+}
+inline void BatchItem::clear_seq_num() {
+  seq_num_ = GOOGLE_LONGLONG(0);
+  clear_has_seq_num();
+}
+inline ::google::protobuf::int64 BatchItem::seq_num() const {
+  return seq_num_;
+}
+inline void BatchItem::set_seq_num(::google::protobuf::int64 value) {
+  set_has_seq_num();
+  seq_num_ = value;
+}
+
+// optional bytes key = 4;
+inline bool BatchItem::has_key() const {
+  return (_has_bits_[0] & 0x00000008u) != 0;
+}
+inline void BatchItem::set_has_key() {
+  _has_bits_[0] |= 0x00000008u;
+}
+inline void BatchItem::clear_has_key() {
+  _has_bits_[0] &= ~0x00000008u;
+}
+inline void BatchItem::clear_key() {
+  if (key_ != &::google::protobuf::internal::kEmptyString) {
+    key_->clear();
+  }
+  clear_has_key();
+}
+inline const ::std::string& BatchItem::key() const {
+  return *key_;
+}
+inline void BatchItem::set_key(const ::std::string& value) {
+  set_has_key();
+  if (key_ == &::google::protobuf::internal::kEmptyString) {
+    key_ = new ::std::string;
+  }
+  key_->assign(value);
+}
+inline void BatchItem::set_key(const char* value) {
+  set_has_key();
+  if (key_ == &::google::protobuf::internal::kEmptyString) {
+    key_ = new ::std::string;
+  }
+  key_->assign(value);
+}
+inline void BatchItem::set_key(const void* value, size_t size) {
+  set_has_key();
+  if (key_ == &::google::protobuf::internal::kEmptyString) {
+    key_ = new ::std::string;
+  }
+  key_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* BatchItem::mutable_key() {
+  set_has_key();
+  if (key_ == &::google::protobuf::internal::kEmptyString) {
+    key_ = new ::std::string;
+  }
+  return key_;
+}
+inline ::std::string* BatchItem::release_key() {
+  clear_has_key();
+  if (key_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = key_;
+    key_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+
+// optional bytes val = 5;
+inline bool BatchItem::has_val() const {
+  return (_has_bits_[0] & 0x00000010u) != 0;
+}
+inline void BatchItem::set_has_val() {
+  _has_bits_[0] |= 0x00000010u;
+}
+inline void BatchItem::clear_has_val() {
+  _has_bits_[0] &= ~0x00000010u;
+}
+inline void BatchItem::clear_val() {
+  if (val_ != &::google::protobuf::internal::kEmptyString) {
+    val_->clear();
+  }
+  clear_has_val();
+}
+inline const ::std::string& BatchItem::val() const {
+  return *val_;
+}
+inline void BatchItem::set_val(const ::std::string& value) {
+  set_has_val();
+  if (val_ == &::google::protobuf::internal::kEmptyString) {
+    val_ = new ::std::string;
+  }
+  val_->assign(value);
+}
+inline void BatchItem::set_val(const char* value) {
+  set_has_val();
+  if (val_ == &::google::protobuf::internal::kEmptyString) {
+    val_ = new ::std::string;
+  }
+  val_->assign(value);
+}
+inline void BatchItem::set_val(const void* value, size_t size) {
+  set_has_val();
+  if (val_ == &::google::protobuf::internal::kEmptyString) {
+    val_ = new ::std::string;
+  }
+  val_->assign(reinterpret_cast<const char*>(value), size);
+}
+inline ::std::string* BatchItem::mutable_val() {
+  set_has_val();
+  if (val_ == &::google::protobuf::internal::kEmptyString) {
+    val_ = new ::std::string;
+  }
+  return val_;
+}
+inline ::std::string* BatchItem::release_val() {
+  clear_has_val();
+  if (val_ == &::google::protobuf::internal::kEmptyString) {
+    return NULL;
+  } else {
+    ::std::string* temp = val_;
+    val_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
+    return temp;
+  }
+}
+
+// optional int32 max_wait_time = 6;
+inline bool BatchItem::has_max_wait_time() const {
+  return (_has_bits_[0] & 0x00000020u) != 0;
+}
+inline void BatchItem::set_has_max_wait_time() {
+  _has_bits_[0] |= 0x00000020u;
+}
+inline void BatchItem::clear_has_max_wait_time() {
+  _has_bits_[0] &= ~0x00000020u;
+}
+inline void BatchItem::clear_max_wait_time() {
+  max_wait_time_ = 0;
+  clear_has_max_wait_time();
+}
+inline ::google::protobuf::int32 BatchItem::max_wait_time() const {
+  return max_wait_time_;
+}
+inline void BatchItem::set_max_wait_time(::google::protobuf::int32 value) {
+  set_has_max_wait_time();
+  max_wait_time_ = value;
+}
+
+// optional .BatchItem.Consistency_level consistency = 7;
+inline bool BatchItem::has_consistency() const {
+  return (_has_bits_[0] & 0x00000040u) != 0;
+}
+inline void BatchItem::set_has_consistency() {
+  _has_bits_[0] |= 0x00000040u;
+}
+inline void BatchItem::clear_has_consistency() {
+  _has_bits_[0] &= ~0x00000040u;
+}
+inline void BatchItem::clear_consistency() {
+  consistency_ = 0;
+  clear_has_consistency();
+}
+inline ::BatchItem_Consistency_level BatchItem::consistency() const {
+  return static_cast< ::BatchItem_Consistency_level >(consistency_);
+}
+inline void BatchItem::set_consistency(::BatchItem_Consistency_level value) {
+  GOOGLE_DCHECK(::BatchItem_Consistency_level_IsValid(value));
+  set_has_consistency();
+  consistency_ = value;
+}
+
 
 // @@protoc_insertion_point(namespace_scope)
 
@@ -574,6 +1403,18 @@ inline void ZPack::set_replicanum(::google::protobuf::int32 value) {
 namespace google {
 namespace protobuf {
 
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::ZPack_Consistency_level>() {
+  return ::ZPack_Consistency_level_descriptor();
+}
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::ZPack_Pack_type>() {
+  return ::ZPack_Pack_type_descriptor();
+}
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::BatchItem_Consistency_level>() {
+  return ::BatchItem_Consistency_level_descriptor();
+}
 
 }  // namespace google
 }  // namespace protobuf

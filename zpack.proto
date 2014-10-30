@@ -6,5 +6,50 @@ message ZPack{
 	optional bytes lease = 5; //used by state_changed_callback
 	optional bool valnull = 6;	
 	optional bool newvalnull = 7; //used by compare_swap
-	optional int32 replicanum = 8;		 
+	optional int32 replicanum = 8;		
+	
+
+
+	//Tony: added for zht-h
+	//zht-h: 0:single request and return, 1:batch request, 2:batch return
+	optional bytes client_ip = 9; //used by OHT
+    optional int32 client_port = 10; //used by OHT
+    optional int64 seq_num = 11; //used by OHT
+	optional int32 max_wait_time = 12; //The longest time this request can wait
+    optional Consistency_level consistency = 13;
+
+	optional Pack_type pack_type = 14 [default = SINGLE];
+	repeated BatchItem batch_list = 15;
+
+
+    enum Consistency_level{
+		STRONG = 0;
+		WEAK = 1;
+    	EVENTUAL = 2;
+	}
+	
+	enum Pack_type{
+		SINGLE = 0;
+		BATCH_REQ = 1;
+		BATCH_RET = 2;
+	}
+	
+	//Tony: end.
+}
+
+message BatchItem{
+    optional bytes client_ip = 1; 
+    optional int32 client_port = 2; 
+    optional int64 seq_num = 3; //used by OHT
+    optional bytes key = 4;
+    optional bytes val = 5;
+	optional int32 max_wait_time = 6; //The longest time this request can wait
+	optional Consistency_level consistency = 7;
+
+	enum Consistency_level{
+		STRONG = 0;
+		WEAK = 1;
+		EVENTUAL = 2;
+	}
+
 }
