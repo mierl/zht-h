@@ -19,7 +19,7 @@ message ZPack{
     optional Consistency_level consistency = 13;
 
 	optional Pack_type pack_type = 14 [default = SINGLE];
-	repeated BatchItem batch_list = 15;
+	repeated BatchItem batch_item = 15;
 
 
     enum Consistency_level{
@@ -41,10 +41,11 @@ message BatchItem{
     optional bytes client_ip = 1; 
     optional int32 client_port = 2; 
     optional int64 seq_num = 3; //used by OHT
-    optional bytes key = 4;
-    optional bytes val = 5;
-	optional int32 max_wait_time = 6; //The longest time this request can wait
-	optional Consistency_level consistency = 7;
+    optional bytes opcode =4;
+	optional bytes key = 5;
+    optional bytes val = 6;
+	optional int32 max_wait_time = 7; //The longest time this request can wait
+	optional Consistency_level consistency = 8;
 
 	enum Consistency_level{
 		STRONG = 0;

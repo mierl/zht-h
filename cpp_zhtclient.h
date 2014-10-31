@@ -39,10 +39,27 @@ using namespace std;
 #include "lru_cache.h"
 
 #include "ProxyStubFactory.h"
-
+#include "zpack.pb.h"
 /*
  *
  */
+
+//Tony: request for batch processing
+class Request{
+	public:
+		string client_ip;
+		int client_port;
+		long seq_num; //used by OHT
+		string opcode;
+		string key;
+		string val;
+		int max_wait_time; //The longest time this request can wait
+		//enum Consistency_level {STRONG, WEAK, EVENTUAL};
+		enum BatchItem_Consistency_level consistency;//From zpack.pb.h
+
+};
+//end.
+
 class ZHTClient {
 
 public:
@@ -70,7 +87,15 @@ public:
 	int state_change_callback(const char *key, const char *expeded_val,
 			int lease);
 	int teardown();
+	
+	//Tony: ZHT-H addtion
+	//TODO: implement following methods.
+	int init();
+	int send_batch(); // called by ZHTClient.
+	int makeBatch(list<Request> src, ZPack &batch);
+	int addToBatch(Request item, ZPack &batch);// by GPB
 
+	//end.
 private:
 	int commonOp(const string &opcode, const string &key, const string &val,
 			const string &val2, string &result, int lease);
@@ -82,5 +107,6 @@ private:
 	ProtoProxy *_proxy;
 	int _msg_maxsize;
 };
+
 
 #endif /* ZHTCLIENT_H_ */
