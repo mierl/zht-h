@@ -91,6 +91,13 @@ bool TCPProxy::sendrecv(const void *sendbuf, const size_t sendcount,
 	return sent_bool && recv_bool;
 }
 
+//Tony added for ZHT-H
+/*
+bool TCPProxy::send_to_dest(const void *sendbuf, string host, int port){
+	return false;
+}
+*/
+
 bool TCPProxy::teardown() {
 
 	bool result = true;

@@ -77,6 +77,13 @@ bool ProtoProxy::sendrecv(const void *sendbuf, const size_t sendcount,
 	return false;
 }
 
+//Tony added for ZHT-H
+/*
+bool send_to_dest(const void *sendbuf, string host, int port){
+
+	return false;
+}*/
+
 bool ProtoProxy::teardown() {
 
 	return false;

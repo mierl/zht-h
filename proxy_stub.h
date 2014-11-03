@@ -32,9 +32,10 @@
 #define PROXY_STUB_H_
 
 #include <sys/types.h>
-
+#include <string>
 #include "protocol_shared.h"
 
+//using namespace std;
 class ProtoAddr {
 
 public:
@@ -60,6 +61,8 @@ public:
 
 	virtual bool sendrecv(const void *sendbuf, const size_t sendcount,
 			void *recvbuf, size_t &recvcount);
+
+	//virtual bool send_to_dest(const void *sendbuf, string host, int port);//Tony added for ZHT-H
 
 	virtual bool teardown();
 };

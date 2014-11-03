@@ -53,7 +53,7 @@ public:
 	virtual bool sendrecv(const void *sendbuf, const size_t sendcount,
 			void *recvbuf, size_t &recvcount);
 	virtual bool teardown();
-
+	//virtual bool send_to_dest(const void *sendbuf, string host, int port);//Tony added for ZHT-H
 protected:
 	virtual int getSockCached(const string& host, const uint& port);
 	virtual int makeClientSocket(const string& host, const uint& port);
