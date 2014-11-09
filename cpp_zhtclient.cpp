@@ -363,10 +363,79 @@ int ZHTClient::makeBatch(list<Request> src, ZPack &batch){
 	return 0;
 }
 
+
 int ZHTClient::teardown() {
 
 	if (_proxy->teardown())
 		return 0;
 	else
 		return -1;
+}
+
+
+int ZHTClient::send_batch(ZPack &batch ) {
+	batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+/*
+	ZPack zpack;
+	zpack.set_opcode(opcode); //"001": lookup, "002": remove, "003": insert, "004": append, "005", compare_swap
+	zpack.set_replicanum(3); // Reserved but not used at this point.
+
+	if (key.empty())
+		return Const::ZSC_REC_EMPTYKEY; //-1, empty key not allowed.
+	else
+		zpack.set_key(key);
+
+	if (val.empty()) {
+
+		zpack.set_val("^"); //coup, to fix ridiculous bug of protobuf! //to debug
+		zpack.set_valnull(true);
+	} else {
+
+		zpack.set_val(val);
+		zpack.set_valnull(false);
+	}
+
+	if (val2.empty()) {
+
+		zpack.set_newval("?"); //coup, to fix ridiculous bug of protobuf! //to debug
+		zpack.set_newvalnull(true);
+	} else {
+
+		zpack.set_newval(val2);
+		zpack.set_newvalnull(false);
+	}
+
+	zpack.set_lease(Const::toString(lease));
+
+	string msg = zpack.SerializeAsString();
+
+*/
+
+	char *buf = (char*) calloc(_msg_maxsize, sizeof(char));
+	size_t msz = _msg_maxsize;
+
+	//send to and receive from
+	string msg = batch.SerializeAsString();
+	_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
+	cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  "<< buf << endl;
+	return 0;
+
+	//...parse status and result
+	/*
+	string sstatus;
+
+	string srecv(buf);
+
+	if (srecv.empty()) {
+
+		sstatus = Const::ZSC_REC_SRVEXP;
+	} else {
+
+		result = srecv.substr(3); //the left, if any, is lookup result or second-try zpack
+		sstatus = srecv.substr(0, 3); //status returned, the first three chars, like 001, -98...
+	}
+
+	free(buf);
+	return sstatus;
+	*/
 }

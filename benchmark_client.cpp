@@ -51,32 +51,34 @@ int numOfOps = -1;
 int keyLen = 10;
 int valLen = 118;
 vector<string> pkgList;
+bool IS_BATCH = false;
+ZPack batch_pack;
 
-void init_packages() {
+void init_packages(bool is_batch) {
 
-	for (int i = 0; i < numOfOps; i++) {
+	if (is_batch) {
 
-		ZPack package;
-		package.set_key(HashUtil::randomString(keyLen));
-		package.set_val(HashUtil::randomString(valLen));
-		//package.set_virtualpath(HashUtil::randomString(lenString)); //as key
-		//package.set_isdir(true);
-		//package.set_opcode();
+		batch_pack.set_pack_type(ZPack_Pack_type_BATCH_REQ);
 
-		//package.set_replicanum(5); //orginal--Note: never let it be nagative!!!
+		for (int i = 0; i < numOfOps; i++) {
+			Request req;
+			req.client_ip = "client_ip";
+			req.client_port = 5000;
+			req.consistency = BatchItem_Consistency_level_EVENTUAL;
+			req.key = HashUtil::randomString(keyLen);
+			req.val = HashUtil::randomString(valLen);
+			ZHTClient::addToBatch(req, batch_pack);
+		}
 
-		/*
-		package.set_realfullpath(
-				"Some-Real-longer-longer-and-longer-Paths--------");
-		package.add_listitem("item-----1");
-		package.add_listitem("item-----2");
-		package.add_listitem("item-----3");
-		package.add_listitem("item-----4");
-		package.add_listitem("item-----5");
-		package.add_listitem(HashUtil::randomString(8192));
-		*/
-		//string s = package.SerializeAsString();
-		pkgList.push_back(package.SerializeAsString());
+	} else {
+		for (int i = 0; i < numOfOps; i++) {
+
+			ZPack single_pack;
+			single_pack.set_key(HashUtil::randomString(keyLen));
+			single_pack.set_val(HashUtil::randomString(valLen));
+
+			pkgList.push_back(single_pack.SerializeAsString());
+		}
 	}
 }
 
@@ -113,9 +115,6 @@ int benchmarkInsert() {
 
 	return 0;
 }
-
-
-
 
 int benchmarkAppend() {
 
@@ -235,6 +234,10 @@ float benchmarkRemove() {
 	return 0;
 }
 
+int benchmarkBatch() {
+	zc.send_batch(batch_pack);
+	return 0;
+}
 
 int benchmark(string &zhtConf, string &neighborConf) {
 
@@ -246,15 +249,22 @@ int benchmark(string &zhtConf, string &neighborConf) {
 		return -1;
 	}
 
-	init_packages();
+	init_packages(IS_BATCH);
 
-	benchmarkInsert();
+	if(IS_BATCH){
+		benchmarkBatch();
 
-	benchmarkLookup();
+	}else{
+		benchmarkInsert();
 
-	benchmarkAppend();
+		benchmarkLookup();
 
-	benchmarkRemove();
+		benchmarkAppend();
+
+		benchmarkRemove();
+	}
+
+
 
 	zc.teardown();
 
@@ -273,6 +283,7 @@ int main(int argc, char **argv) {
 	string zhtConf = "";
 	string neighborConf = "";
 
+	IS_BATCH = true;
 	int c;
 	while ((c = getopt(argc, argv, "z:n:o:h")) != -1) {
 		switch (c) {

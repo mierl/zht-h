@@ -91,9 +91,9 @@ public:
 	//Tony: ZHT-H addtion
 	//TODO: implement following methods.
 	int init();
-	int send_batch(); // called by ZHTClient.commonOp, but maybe not here.
-	int makeBatch(list<Request> src, ZPack &batch);
-	int addToBatch(Request item, ZPack &batch);// by GPB
+	int send_batch(ZPack &batch); // called by ZHTClient.commonOp, but maybe not here.
+	static int makeBatch(list<Request> src, ZPack &batch);
+	static int addToBatch(Request item, ZPack &batch);// by GPB
 
 	//end.
 private:

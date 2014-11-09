@@ -85,6 +85,15 @@ string HTWorker::run(const char *buf) {
 	string str(buf);
 	zpack.ParseFromString(str);
 
+
+	if(ZPack_Pack_type_BATCH_REQ  == zpack.pack_type()){//batch
+		cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
+		cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
+
+		result = "OK";
+
+	}else if(ZPack_Pack_type_SINGLE == zpack.pack_type()){//single
+
 	if (zpack.opcode() == Const::ZSC_OPC_LOOKUP) {
 
 		result = lookup(zpack);
@@ -107,7 +116,7 @@ string HTWorker::run(const char *buf) {
 
 		result = Const::ZSC_REC_UOPC;
 	}
-
+	}
 	return result;
 }
 
