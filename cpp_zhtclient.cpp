@@ -357,6 +357,7 @@ int ZHTClient::makeBatch(list<Request> src, ZPack &batch){
 
 	if(0 != batch.batch_item_size()){
 		batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+		batch.set_key(src.front().key);// use any key for batch's key, since they all go to one place.
 	} else
 		batch.set_pack_type(ZPack_Pack_type_SINGLE);
 
@@ -416,6 +417,7 @@ int ZHTClient::send_batch(ZPack &batch ) {
 
 	//send to and receive from
 	string msg = batch.SerializeAsString();
+	cout << "cpp_zhtclient: sendrecv: sent "<<msg.length()<<" bytes."<<endl;
 	_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
 	cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  "<< buf << endl;
 	return 0;
