@@ -453,7 +453,7 @@ void EpollServer::serve() {
 						socklen_t sender_len = sizeof(struct sockaddr);
 						ssize_t count = recvfrom(edata->fd(), buf, sizeof buf,
 								0, &fromaddr, &sender_len);
-
+						//cout << "EpollServer.cpp: serve(): received "<< count << " bytes."<<endl;
 						if (count == -1) {
 
 							if (errno != EAGAIN) {

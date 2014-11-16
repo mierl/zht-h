@@ -418,7 +418,15 @@ int ZHTClient::send_batch(ZPack &batch ) {
 	//send to and receive from
 	string msg = batch.SerializeAsString();
 	cout << "cpp_zhtclient: sendrecv: sent "<<msg.length()<<" bytes."<<endl;
-	_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
+	ZPack zpack;
+	zpack.ParseFromString(msg);
+
+	int size = zpack.ByteSize();
+	char* str = (char*)calloc(1, size );// = msg.c_str();
+	zpack.SerializeToArray(str, size);
+
+
+	_proxy->sendrecv(str, size, buf, msz);
 	cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  "<< buf << endl;
 	return 0;
 

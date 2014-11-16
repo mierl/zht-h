@@ -82,8 +82,11 @@ string HTWorker::run(const char *buf) {
 	string result;
 
 	ZPack zpack;
-	string str(buf);
-	zpack.ParseFromString(str);
+	//string str(buf);
+	string* str =(string*) buf;
+
+
+	zpack.ParseFromString(*str);
 
 
 	if(ZPack_Pack_type_BATCH_REQ  == zpack.pack_type()){//batch
