@@ -376,52 +376,17 @@ int ZHTClient::teardown() {
 
 int ZHTClient::send_batch(ZPack &batch ) {
 
-/*
-	ZPack zpack;
-	zpack.set_opcode(opcode); //"001": lookup, "002": remove, "003": insert, "004": append, "005", compare_swap
-	zpack.set_replicanum(3); // Reserved but not used at this point.
-
-	if (key.empty())
-		return Const::ZSC_REC_EMPTYKEY; //-1, empty key not allowed.
-	else
-		zpack.set_key(key);
-
-	if (val.empty()) {
-
-		zpack.set_val("^"); //coup, to fix ridiculous bug of protobuf! //to debug
-		zpack.set_valnull(true);
-	} else {
-
-		zpack.set_val(val);
-		zpack.set_valnull(false);
-	}
-
-	if (val2.empty()) {
-
-		zpack.set_newval("?"); //coup, to fix ridiculous bug of protobuf! //to debug
-		zpack.set_newvalnull(true);
-	} else {
-
-		zpack.set_newval(val2);
-		zpack.set_newvalnull(false);
-	}
-
-	zpack.set_lease(Const::toString(lease));
-
-	string msg = zpack.SerializeAsString();
-
-*/
+	// set batch type for message
 	batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
 
+	// serialize the message to string
 	string msg = batch.SerializeAsString();
-
-	ZPack tmp;
-	tmp.ParseFromString(msg);
-	printf("{%s}:{%s,%s}\n", tmp.key().c_str(), tmp.val().c_str(),
-	tmp.newval().c_str());
 
 	char *buf = (char*) calloc(_msg_maxsize, sizeof(char));
 	size_t msz = _msg_maxsize;
+
+	ZPack temp;
+	temp.ParseFromString(msg.c_str());
 
 	/*send to and receive from*/
 	_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);

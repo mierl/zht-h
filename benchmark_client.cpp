@@ -61,7 +61,7 @@ void init_packages(bool is_batch) {
 		batch_pack.set_pack_type(ZPack_Pack_type_BATCH_REQ);
 
 		for (int i = 0; i < numOfOps; i++) {
-			Request req;
+			/*Request req;
 			req.client_ip = "client_ip";
 			req.client_port = 5000;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
@@ -71,7 +71,12 @@ void init_packages(bool is_batch) {
 			req.key = "1234567890";//HashUtil::randomString(keyLen);
 			req.val = "1234567890";//HashUtil::randomString(valLen);
 
-			ZHTClient::addToBatch(req, batch_pack);
+			ZHTClient::addToBatch(req, batch_pack);*/
+
+			ZPack single_pack;
+			single_pack.set_key("1234567890");
+			single_pack.set_val("1234567890");
+			batch_pack = single_pack;
 		}
 
 	} else {
@@ -239,17 +244,21 @@ float benchmarkRemove() {
 }
 
 int benchmarkBatch() {
-	int n = batch_pack.batch_item_size();
-	cout << n << endl;
-	cout <<"zpack.key: "<< batch_pack.key() <<endl;
-	for(int i = 0; i<n; i++){
-		cout <<"zpack.batch_item(i).key: "<<batch_pack.batch_item(i).key() << endl;
-		cout <<"zpack.batch_item(i).val: "<<batch_pack.batch_item(i).val() << endl<< endl;
 
-	}
+//	int n = batch_pack.batch_item_size();
+//	cout << n << endl;
+
+//	for(int i = 0; i<n; i++){
+//		cout <<"zpack.batch_item(i).key: "<<batch_pack.batch_item(i).key() << endl;
+//		cout <<"zpack.batch_item(i).val: "<<batch_pack.batch_item(i).val() << endl<< endl;
+//
+//	}
 
 	zc.send_batch(batch_pack);
 	return 0;
+
+
+
 }
 
 int benchmark(string &zhtConf, string &neighborConf) {
