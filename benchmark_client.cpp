@@ -65,8 +65,12 @@ void init_packages(bool is_batch) {
 			req.client_ip = "client_ip";
 			req.client_port = 5000;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
-			req.key = HashUtil::randomString(keyLen);
-			req.val = HashUtil::randomString(valLen);
+			//req.key = HashUtil::randomString(keyLen);
+			//req.val = HashUtil::randomString(valLen);
+
+			req.key = "1234567890";//HashUtil::randomString(keyLen);
+			req.val = "1234567890";//HashUtil::randomString(valLen);
+
 			ZHTClient::addToBatch(req, batch_pack);
 		}
 

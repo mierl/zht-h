@@ -375,7 +375,7 @@ int ZHTClient::teardown() {
 
 
 int ZHTClient::send_batch(ZPack &batch ) {
-	batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+
 /*
 	ZPack zpack;
 	zpack.set_opcode(opcode); //"001": lookup, "002": remove, "003": insert, "004": append, "005", compare_swap
@@ -411,22 +411,21 @@ int ZHTClient::send_batch(ZPack &batch ) {
 	string msg = zpack.SerializeAsString();
 
 */
+	batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+
+	string msg = batch.SerializeAsString();
+
+	ZPack tmp;
+	tmp.ParseFromString(msg);
+	printf("{%s}:{%s,%s}\n", tmp.key().c_str(), tmp.val().c_str(),
+	tmp.newval().c_str());
 
 	char *buf = (char*) calloc(_msg_maxsize, sizeof(char));
 	size_t msz = _msg_maxsize;
 
-	//send to and receive from
-	string msg = batch.SerializeAsString();
-	cout << "cpp_zhtclient: sendrecv: sent "<<msg.length()<<" bytes."<<endl;
-	ZPack zpack;
-	zpack.ParseFromString(msg);
+	/*send to and receive from*/
+	_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
 
-	int size = zpack.ByteSize();
-	char* str = (char*)calloc(1, size );// = msg.c_str();
-	zpack.SerializeToArray(str, size);
-
-
-	_proxy->sendrecv(str, size, buf, msz);
 	cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  "<< buf << endl;
 	return 0;
 
