@@ -373,7 +373,6 @@ int ZHTClient::teardown() {
 		return -1;
 }
 
-
 int ZHTClient::send_batch(ZPack &batch ) {
 
 	// set batch type for message
