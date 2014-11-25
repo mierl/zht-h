@@ -67,9 +67,9 @@ void init_packages(bool is_batch) {
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
 			req.key = HashUtil::randomString(keyLen);
 			req.val = HashUtil::randomString(valLen);
-
 			ZHTClient::addToBatch(req, batch_pack);
 		}
+		cout << "Total items added to batch: " << numOfOps << endl;
 
 	} else {
 		for (int i = 0; i < numOfOps; i++) {

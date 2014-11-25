@@ -79,17 +79,24 @@ HTWorker::~HTWorker() {
 
 string HTWorker::run(const char *buf) {
 
-	string result;
-
 	ZPack zpack;
 	zpack.ParseFromString(buf);
 
+	string result;
 
 	if(ZPack_Pack_type_BATCH_REQ  == zpack.pack_type()){//batch
 		cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
 		cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
 		cout <<"zpack.key: "<< zpack.key() <<endl;
 		cout <<"zpack.batch_item(i).val: "<<zpack.batch_item(0).val() << endl<< endl;
+
+		cout << "printing batch items received... " << endl;
+		for(int i =0; i < zpack.batch_item_size(); i++){
+			BatchItem b = zpack.batch_item(i);
+			cout <<"batch item recieved key: " << b.key() << endl;
+			cout << "batch item received value: " << b.val() << endl;
+		}
+
 		result = Const::ZSC_REC_UOPC; // "OK";
 
 	}else if(ZPack_Pack_type_SINGLE == zpack.pack_type()){//single
