@@ -37,6 +37,14 @@
 #include "ConfHandler.h"
 #include "Env.h"
 #include "StrTokenizer.h"
+#include "Util.h"
+
+#include <pthread.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <errno.h>
+#include "bigdata_transfer.h"
+
 
 using namespace iit::datasys::zht::dm;
 
@@ -336,34 +344,154 @@ string ZHTClient::commonOpInternal(const string &opcode, const string &key,
 	return sstatus;
 }
 
-int ZHTClient::addToBatch(Request item, ZPack &batch){
+typedef struct recv_thread_args {
+	int client_listen_port;
+
+} recv_args;
+
+
+//Duplicated from ip_proxy_stub.cpp
+int loopedrecv(int sock, void *senderAddr, string &srecv) {
+
+	ssize_t recvcount = -2;
+	socklen_t addr_len = sizeof(struct sockaddr);
+
+	BdRecvBase *pbrb = new BdRecvFromServer();
+
+	char buf[Env::BUF_SIZE];
+
+	while (1) {
+
+		memset(buf, '\0', sizeof(buf));
+
+		ssize_t count;
+		if (senderAddr == NULL)
+			count = ::recv(sock, buf, sizeof(buf), 0);
+		else
+			count = ::recvfrom(sock, buf, sizeof(buf), 0,
+					(struct sockaddr *) senderAddr, &addr_len);
+
+		if (count == -1 || count == 0) {
+
+			recvcount = count;
+
+			break;
+		}
+
+		bool ready = false;
+
+		string bd = pbrb->getBdStr(sock, buf, count, ready);
+
+		if (ready) {
+
+			srecv = bd;
+			recvcount = srecv.size();
+
+			break;
+		}
+
+		memset(buf, '\0', sizeof(buf));
+	}
+
+	delete pbrb;
+	pbrb = NULL;
+
+	return recvcount;
+}
+
+void * ZHTClient::client_receiver_thread(void* argum) {
+	recv_args *args = (recv_args *) argum;
+	int port = args->client_listen_port;
+
+	struct sockaddr_in svrAdd_in;
+	int svrSock = -1;
+	//printf("success 1\n");
+	memset(&svrAdd_in, 0, sizeof(struct sockaddr_in));
+	svrAdd_in.sin_family = AF_INET;
+	svrAdd_in.sin_addr.s_addr = INADDR_ANY;
+	svrAdd_in.sin_port = htons(port);
+	//printf("success 2\n");
+	svrSock = socket(AF_INET, SOCK_STREAM, 0);
+	if (bind(svrSock, (struct sockaddr*) &svrAdd_in, sizeof(struct sockaddr))
+			< 0) {
+		perror("bind error");
+		exit(-1);
+	}
+	//printf("bind \n");
+
+	if (listen(svrSock, 8000) < 0) {
+		printf("listen error\n");
+	}
+	//printf("listen \n");
+
+	/* make the socket reusable */
+	int reuse_addr = 1;
+	int ret = setsockopt(svrSock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr,
+			sizeof(reuse_addr));
+	if (ret < 0) {
+		cerr << "reuse socket failed: [" << svrSock << "], " << endl;
+		return NULL;
+	}
+
+	sockaddr *in_addr = (sockaddr *) calloc(1, sizeof(struct sockaddr));
+	socklen_t in_len = sizeof(struct sockaddr);
+	int infd;
+	struct sockaddr_in client_addr;
+	socklen_t clilen;
+
+	while (CLIENT_RECEIVE_RUN) {
+
+		int connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
+		string result;
+		int recvcount = loopedrecv(connfd, NULL, result);
+		ZPack pack;
+		pack.ParseFromString(result);
+
+		for(int i =0; i<pack.batch_item_size(); i++){
+			BatchItem item = pack.batch_item(i);
+			if(0 == item.opcode().compare("001")){//if lookup. Maybe need to return other status in string form.
+				req_results_map.insert(std::pair<string, string>(item.key(), item.val()));
+			}
+		}
+
+		//How to handle received result?
+	}
+}
+
+int results_handler(string result){
+	ZPack res;
+	res.ParseFromString(result);
+
+	return 0;
+}
+
+int ZHTClient::addToBatch(Request item, ZPack &batch) {
 	BatchItem* newItem = batch.add_batch_item();
 	newItem->set_key(item.key);
 	newItem->set_val(item.val);
 	newItem->set_client_ip(item.client_ip);
 	newItem->set_client_port(item.client_port);
 //	newItem->set_opcode(item.opcode);
-	newItem->set_max_wait_time(item.max_wait_time);
+	newItem->set_max_wait_time(item.max_tolerant_latency);
 	newItem->set_consistency(item.consistency);
 	return 0;
 }
 
-int ZHTClient::makeBatch(list<Request> src, ZPack &batch){
+int ZHTClient::makeBatch(list<Request> src, ZPack &batch) {
 
 	list<Request>::iterator it;
-	for(it = src.begin(); it != src.end(); it++){
+	for (it = src.begin(); it != src.end(); it++) {
 		addToBatch(*it, batch);
 	}
 
-	if(0 != batch.batch_item_size()){
+	if (0 != batch.batch_item_size()) {
 		batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
-		batch.set_key(src.front().key);// use any key for batch's key, since they all go to one place.
+		batch.set_key(src.front().key); // use any key for batch's key, since they all go to one place.
 	} else
 		batch.set_pack_type(ZPack_Pack_type_SINGLE);
 
 	return 0;
 }
-
 
 int ZHTClient::teardown() {
 
@@ -373,7 +501,7 @@ int ZHTClient::teardown() {
 		return -1;
 }
 
-int ZHTClient::send_batch(ZPack &batch ) {
+int ZHTClient::send_batch(ZPack &batch) {
 
 	// set batch type for message
 	batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
@@ -390,25 +518,117 @@ int ZHTClient::send_batch(ZPack &batch ) {
 	/*send to and receive from*/
 	_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
 
-	cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  "<< buf << endl;
+	cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  " << buf << endl;
 	return 0;
 
 	//...parse status and result
 	/*
-	string sstatus;
+	 string sstatus;
 
-	string srecv(buf);
+	 string srecv(buf);
 
-	if (srecv.empty()) {
+	 if (srecv.empty()) {
 
-		sstatus = Const::ZSC_REC_SRVEXP;
-	} else {
+	 sstatus = Const::ZSC_REC_SRVEXP;
+	 } else {
 
-		result = srecv.substr(3); //the left, if any, is lookup result or second-try zpack
-		sstatus = srecv.substr(0, 3); //status returned, the first three chars, like 001, -98...
+	 result = srecv.substr(3); //the left, if any, is lookup result or second-try zpack
+	 sstatus = srecv.substr(0, 3); //status returned, the first three chars, like 001, -98...
+	 }
+
+	 free(buf);
+	 return sstatus;
+	 */
+}
+
+//This function accumulate requests and send in batch when a condition is satisfied
+//It use a hash map track status of active requests
+//This method is called from a client service loop, which keep receiving requests.
+
+class AggregatedSender {
+public:
+
+	int req_handler(Request in_req, int policy); //call this every time when a request is sent by the client
+	int batch_monitor(int para, ZHTClient zc);
+	int init(void);
+	//A monitor thread, watch the condition and decide when to send the batch.
+	//Running from the beginning.
+	//multiple policies applicable.
+private:
+
+	//Track request status
+	map<string, int> req_stats_map;
+	//map<string, string> req_results_map;
+	//Batch container
+	//list<Request> send_list;
+	ZPack req_batch;	//contains a list of requests
+	pthread_mutex_t mutex_monitor_condition = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_t mutex_batch = PTHREAD_MUTEX_INITIALIZER;
+	double batch_deadline;// = TIME_MAX;// batch -wide deadline, a absolute time stamp.
+	bool MONITOR_RUN;	// = false;
+	int latency_time;// = 500; //in microsec. Batch must go by this much time before deadline. It's left for transferring and svr side processing.
+};
+
+int AggregatedSender::init() {
+	//this->mutex_batch = PTHREAD_MUTEX_INITIALIZER;
+	//this->mutex_monitor_condition = PTHREAD_MUTEX_INITIALIZER;
+	this->batch_deadline = TIME_MAX;// batch -wide deadline, a absolute time stamp.
+	this->MONITOR_RUN = false;
+	this->latency_time = 500;
+	return 0;
+}
+
+int AggregatedSender::req_handler(Request in_req, int policy) {
+
+	in_req.arrival_time = TimeUtil::getTime_usec();
+
+	this->req_stats_map.insert(std::pair<string, int>(in_req.key, 1));//1: stay in queue, 0 results returned.
+
+	//push req to queue, and update condition related parameters.
+	ZHTClient::addToBatch(in_req, this->req_batch);
+
+	double in_req_deadline = in_req.arrival_time
+			+ in_req.max_tolerant_latency * 1000; //max_tolerant_latency is in ms
+
+	if (this->batch_deadline >= in_req_deadline) { // new req is the most urgent one
+
+		pthread_mutex_lock(&mutex_monitor_condition);
+
+		this->batch_deadline = in_req_deadline;
+
+		pthread_mutex_unlock(&mutex_monitor_condition);
+
 	}
 
-	free(buf);
-	return sstatus;
-	*/
+	return 0;
 }
+
+int AggregatedSender::batch_monitor(int para, ZHTClient zc) {
+	bool condition = false;
+	while (this->MONITOR_RUN) {
+
+		condition = (this->batch_deadline - TimeUtil::getTime_usec()
+				<= this->latency_time); //time is out!
+
+		if (condition) {
+			pthread_mutex_lock(&mutex_batch);
+
+			zc.send_batch(this->req_batch);
+
+			ZPack p = this->req_batch;
+			this->req_batch = ZPack();
+
+			pthread_mutex_lock(&mutex_monitor_condition);
+
+			this->batch_deadline = TIME_MAX;
+
+			pthread_mutex_unlock(&mutex_monitor_condition);
+
+			pthread_mutex_unlock(&mutex_batch);
+		}
+
+	}
+
+	return 0;
+}
+

@@ -80,7 +80,8 @@ HTWorker::~HTWorker() {
 string HTWorker::run(const char *buf) {
 
 	ZPack zpack;
-	zpack.ParseFromString(buf);
+	string buff(buf);
+	zpack.ParseFromString(buff);
 
 	string result;
 

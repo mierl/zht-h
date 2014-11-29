@@ -45,20 +45,24 @@ using namespace std;
  */
 
 //Tony: request for batch processing
-class Request{
-	public:
-		string client_ip;
-		int client_port;
-		long seq_num; //used by OHT
-		string opcode;
-		string key;
-		string val;
-		int max_wait_time; //The longest time this request can wait
-		//enum Consistency_level {STRONG, WEAK, EVENTUAL};
-		enum BatchItem_Consistency_level consistency;//From zpack.pb.h
+class Request {
+public:
+	string client_ip;
+	int client_port;
+	long seq_num; //used by OHT
+	string opcode;
+	string key;
+	string val;
+	int max_tolerant_latency; //The longest time this request can wait, in ms.
+	double arrival_time;
+	//enum Consistency_level {STRONG, WEAK, EVENTUAL};
+	enum BatchItem_Consistency_level consistency; //From zpack.pb.h
 
 };
-//end.
+
+double const TIME_MAX = 9999999999000000;//a reasonably long time in the future.
+
+//Tony: request for batch processing end.
 
 class ZHTClient {
 
@@ -87,13 +91,14 @@ public:
 	int state_change_callback(const char *key, const char *expeded_val,
 			int lease);
 	int teardown();
-	
+
 	//Tony: ZHT-H addtion
 	//TODO: implement following methods.
 	int init();
 	int send_batch(ZPack &batch); // called by ZHTClient.commonOp, but maybe not here.
 	static int makeBatch(list<Request> src, ZPack &batch);
-	static int addToBatch(Request item, ZPack &batch);// by GPB
+	static int addToBatch(Request item, ZPack &batch); // by GPB
+	void* client_receiver_thread(void* arg);
 
 	//end.
 private:
@@ -103,10 +108,14 @@ private:
 			const string &val, const string &val2, string &result, int lease);
 	string extract_value(const string &returnStr);
 
+	//Tony: ZHT-H addtion
+	map<string, string> req_results_map;
+	//map<string, string> req_ret_status_map;
+	bool CLIENT_RECEIVE_RUN;
+
 private:
 	ProtoProxy *_proxy;
 	int _msg_maxsize;
 };
-
 
 #endif /* ZHTCLIENT_H_ */
