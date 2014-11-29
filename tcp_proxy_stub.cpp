@@ -301,8 +301,21 @@ bool TCPStub::recvsend(ProtoAddr addr, const void *recvbuf) {
 	int sendcount = result.size();
 
 	//send response to client over server sock fd
-	int sentsize = sendBack(addr, sendbuf, sendcount);
-	bool sent_bool = sentsize == sendcount;
+	bool sent_bool;
+	ZPack pack;
+	pack.ParseFromString(result);
+	if(ZPack_Pack_type_BATCH_REQ  == pack.pack_type()){
+		TCPProxy tcp;
+		ZHTUtil zu;
+
+		int sock = tcp.makeClientSocket(pack.client_ip(), pack.client_port());
+
+		tcp.sendTo(sock, (void*)result.c_str(), result.size());
+
+	}else{
+		int sentsize = sendBack(addr, sendbuf, sendcount);
+		sent_bool = sentsize == sendcount;
+	}
 
 	return sent_bool;
 #endif

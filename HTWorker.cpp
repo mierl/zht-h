@@ -175,7 +175,7 @@ string HTWorker::process_batch(const ZPack &zpack){
 	}
 
 	cout << "Each item in batch processed, sending back result packet" << endl;
-	string msg = zpack.SerializeAsString();
+	string msg = response_pack.SerializeAsString();
 	char *buf = (char*) calloc(_msg_maxsize, sizeof(char));
 	size_t msz = _msg_maxsize;
 
