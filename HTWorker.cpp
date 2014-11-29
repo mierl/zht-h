@@ -133,6 +133,9 @@ string HTWorker::process_batch(const ZPack &zpack){
 	cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
 	cout << "iterating over batch items and processing... " << endl;
 
+	ZPack response_pack;
+	response_pack.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+
 	int count = 0;
 	for(int i =0; i < zpack.batch_item_size(); i++){
 		BatchItem batch_item = zpack.batch_item(i);
@@ -168,6 +171,7 @@ string HTWorker::process_batch(const ZPack &zpack){
 			batch_item.set_val(Const::ZSC_REC_UOPC);
 		}
 
+		addToBatch(batch_item, response_pack);
 	}
 
 	cout << "Each item in batch processed, sending back result packet" << endl;
@@ -181,6 +185,18 @@ string HTWorker::process_batch(const ZPack &zpack){
 #else
 	return msg.c_str();
 #endif
+}
+
+int HTWorker::addToBatch(BatchItem item, ZPack &batch) {
+	BatchItem* newItem = batch.add_batch_item();
+	newItem->set_key(item.key());
+	newItem->set_val(item.val());
+	newItem->set_client_ip(item.client_ip());
+	newItem->set_client_port(item.client_port());
+	newItem->set_opcode(item.opcode());
+	newItem->set_max_wait_time(item.max_wait_time());
+	newItem->set_consistency(item.consistency());
+	return 0;
 }
 
 string HTWorker::insert_shared(const ZPack &zpack) {
