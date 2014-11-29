@@ -54,14 +54,17 @@ public:
 			void *recvbuf, size_t &recvcount);
 	virtual bool teardown();
 	//virtual bool send_to_dest(const void *sendbuf, string host, int port);//Tony added for ZHT-H
+	int sendTo(int sock, const void* sendbuf, int sendcount);
+	virtual int getSockCached(const string& host, const uint& port);//Tony: move from protected.
+	virtual int makeClientSocket(const string& host, const uint& port);//Tony: move from protected.
 protected:
-	virtual int getSockCached(const string& host, const uint& port);
-	virtual int makeClientSocket(const string& host, const uint& port);
+	//virtual int getSockCached(const string& host, const uint& port);
+	//virtual int makeClientSocket(const string& host, const uint& port);
 	virtual int recvFrom(int sock, void* recvbuf);
 	virtual int loopedrecv(int sock, string &srecv);
 
 private:
-	int sendTo(int sock, const void* sendbuf, int sendcount);
+	//int sendTo(int sock, const void* sendbuf, int sendcount);
 
 private:
 	//static MAP CONN_CACHE;

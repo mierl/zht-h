@@ -44,7 +44,8 @@
 #include <netinet/in.h>
 #include <errno.h>
 #include "bigdata_transfer.h"
-
+#include "tcp_proxy_stub.h"
+#include "ZHTUtil.h"
 
 using namespace iit::datasys::zht::dm;
 
@@ -399,6 +400,24 @@ int loopedrecv(int sock, void *senderAddr, string &srecv) {
 	return recvcount;
 }
 
+int sendTo_BD(int sock, const void* sendbuf, int sendcount) {
+
+	BdSendBase *pbsb = new BdSendToServer((char*) sendbuf);
+	int sentSize = pbsb->bsend(sock);
+	delete pbsb;
+	pbsb = NULL;
+
+	//prompt errors
+	if (sentSize < sendcount) {
+
+		//todo: bug prone
+		/*cerr << "TCPProxy::sendTo(): error on BdSendToServer::bsend(...): "
+		 << strerror(errno) << endl;*/
+	}
+
+	return sentSize;
+}
+
 void * ZHTClient::client_receiver_thread(void* argum) {
 	recv_args *args = (recv_args *) argum;
 	int port = args->client_listen_port;
@@ -516,7 +535,16 @@ int ZHTClient::send_batch(ZPack &batch) {
 	temp.ParseFromString(msg.c_str());
 
 	/*send to and receive from*/
-	_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
+	//_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
+	TCPProxy tcp;
+
+	ZHTUtil zu;
+	HostEntity he = zu.getHostEntityByKey(msg);
+	int sock = tcp.getSockCached(he.host, he.port);
+	tcp.sendTo(sock, (void*)msg.c_str(), msg.size());
+//	sock
+//	sendTo_BD();
+
 
 	cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  " << buf << endl;
 	return 0;

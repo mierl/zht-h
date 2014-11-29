@@ -82,7 +82,7 @@ private:
 	string append_shared(const ZPack &zpack);
 	string remove_shared(const ZPack &zpack);
 
-	string HTWorker::process_batch(const ZPack &zpack);
+	string process_batch(const ZPack &zpack);
 	int _msg_maxsize;
 private:
 	static void *threaded_state_change_callback(void *arg);
