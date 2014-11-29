@@ -86,20 +86,20 @@ string HTWorker::run(const char *buf) {
 	string result;
 
 	if(ZPack_Pack_type_BATCH_REQ  == zpack.pack_type()){//batch
-		cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
-		cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
-		cout <<"zpack.key: "<< zpack.key() <<endl;
-		cout <<"zpack.batch_item(i).val: "<<zpack.batch_item(0).val() << endl<< endl;
-
-		cout << "printing batch items received... " << endl;
-		for(int i =0; i < zpack.batch_item_size(); i++){
-			BatchItem b = zpack.batch_item(i);
-			cout <<"batch item recieved key: " << b.key() << endl;
-			cout << "batch item received value: " << b.val() << endl;
-		}
-
-		result = Const::ZSC_REC_UOPC; // "OK";
-
+//		cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
+//		cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
+//		cout <<"zpack.key: "<< zpack.key() <<endl;
+//		cout <<"zpack.batch_item(i).val: "<<zpack.batch_item(0).val() << endl<< endl;
+//
+//		cout << "printing batch items received... " << endl;
+//		for(int i =0; i < zpack.batch_item_size(); i++){
+//			BatchItem b = zpack.batch_item(i);
+//			cout <<"batch item recieved key: " << b.key() << endl;
+//			cout << "batch item received value: " << b.val() << endl;
+//		}
+//
+//		result = Const::ZSC_REC_UOPC; // "OK";
+		result = process_batch(zpack);
 	}else if(ZPack_Pack_type_SINGLE == zpack.pack_type()){//single
 
 	if (zpack.opcode() == Const::ZSC_OPC_LOOKUP) {
@@ -126,6 +126,61 @@ string HTWorker::run(const char *buf) {
 	}
 	}
 	return result;
+}
+
+string HTWorker::process_batch(const ZPack &zpack){
+	cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
+	cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
+	cout << "iterating over batch items and processing... " << endl;
+
+	int count = 0;
+	for(int i =0; i < zpack.batch_item_size(); i++){
+		BatchItem batch_item = zpack.batch_item(i);
+		ZPack batch_item_zpack;
+		batch_item_zpack.set_key(batch_item.key());
+		batch_item_zpack.set_val(batch_item.val());
+		batch_item_zpack.set_opcode(batch_item.opcode());
+		batch_item_zpack.set_client_ip(batch_item.client_ip());
+		batch_item_zpack.set_client_port(batch_item.client_port());
+		batch_item_zpack.set_max_wait_time(batch_item.max_wait_time());
+		//batch_item_zpack.set_consistency(batch_item.consistency());
+		string result = "";
+
+		if (batch_item_zpack.opcode() == Const::ZSC_OPC_LOOKUP) {
+			batch_item.set_val(lookup_shared(batch_item_zpack));
+		} else if (batch_item_zpack.opcode() == Const::ZSC_OPC_INSERT) {
+			batch_item.set_val(insert_shared(batch_item_zpack));
+		} else if (batch_item_zpack.opcode() == Const::ZSC_OPC_APPEND) {
+			batch_item.set_val(append_shared(batch_item_zpack));
+		} else if (batch_item_zpack.opcode() == Const::ZSC_OPC_CMPSWP) {
+			if (batch_item_zpack.key().empty()){
+				batch_item.set_val(Const::ZSC_REC_EMPTYKEY); //-1
+			}else{
+				result = compare_swap_internal(batch_item_zpack);
+				string lkpresult = lookup_shared(batch_item_zpack);
+				//batch_item.set_val(batch_item.val().append(erase_status_code(lkpresult)));
+			}
+		} else if (batch_item_zpack.opcode() == Const::ZSC_OPC_REMOVE) {
+			batch_item.set_val(remove_shared(batch_item_zpack));
+		} else if (batch_item_zpack.opcode() == Const::ZSC_OPC_STCHGCB) {
+			batch_item.set_val(state_change_callback(batch_item_zpack));
+		} else {
+			batch_item.set_val(Const::ZSC_REC_UOPC);
+		}
+
+	}
+
+	cout << "Each item in batch processed, sending back result packet" << endl;
+	string msg = zpack.SerializeAsString();
+	char *buf = (char*) calloc(_msg_maxsize, sizeof(char));
+	size_t msz = _msg_maxsize;
+
+#ifdef SCCB
+	_stub->sendBack(_addr, msg.c_str(), msz);
+	return "";
+#else
+	return msg.c_str();
+#endif
 }
 
 string HTWorker::insert_shared(const ZPack &zpack) {
