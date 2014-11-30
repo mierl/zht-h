@@ -61,7 +61,8 @@ public:
 };
 
 double const TIME_MAX = 9999999999000000;//a reasonably long time in the future.
-
+extern bool CLIENT_RECEIVE_RUN; //Need to be define in the cpp file.
+extern map<string, string> req_results_map;
 //Tony: request for batch processing end.
 
 class ZHTClient {
@@ -109,9 +110,9 @@ private:
 	string extract_value(const string &returnStr);
 
 	//Tony: ZHT-H addtion
-	static map<string, string> req_results_map;
+
 	//map<string, string> req_ret_status_map;
-	static bool CLIENT_RECEIVE_RUN;
+
 
 private:
 	ProtoProxy *_proxy;

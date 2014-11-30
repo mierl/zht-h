@@ -427,6 +427,9 @@ int ZHTClient::start_receiver_thread(int port){
 	return 0;
 }
 
+bool CLIENT_RECEIVE_RUN = true; //needed for global variables.
+map<string, string> req_results_map; //needed for global variables.
+
 void * ZHTClient::client_receiver_thread(void* argum) {
 	recv_args *args = (recv_args *) argum;
 	int port = args->client_listen_port;
@@ -478,7 +481,7 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 		for(int i =0; i<pack.batch_item_size(); i++){
 			BatchItem item = pack.batch_item(i);
 			if(0 == item.opcode().compare("001")){//if lookup. Maybe need to return other status in string form.
-				ZHTClient::req_results_map.insert(std::pair<string, string>(item.key(), item.val()));
+				req_results_map.insert(std::pair<string, string>(item.key(), item.val()));
 				cout << "Client listening thread received: key = "<< item.key()<<endl;
 				cout << "Value = "<< item.val()<<endl;
 			}
