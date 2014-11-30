@@ -237,14 +237,15 @@ float benchmarkRemove() {
 
 int benchmarkBatch() {
 	zc.start_receiver_thread(50009);
+	sleep(1);
 	cout << "starting batch benchmark" << endl;
 
 	int n = batch_pack.batch_item_size();
 	cout << "Number of batch items" <<  n << endl;
 
 	for(int i = 0; i<n; i++){
-		cout <<"zpack.batch_item(i).key: "<<batch_pack.batch_item(i).key() << endl;
-		cout <<"zpack.batch_item(i).val: "<<batch_pack.batch_item(i).val() << endl<< endl;
+		//cout <<"zpack.batch_item(i).key: "<<batch_pack.batch_item(i).key() << endl;
+		//cout <<"zpack.batch_item(i).val: "<<batch_pack.batch_item(i).val() << endl<< endl;
 	}
 
 	zc.send_batch(batch_pack);
