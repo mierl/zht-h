@@ -62,6 +62,7 @@ void init_packages(bool is_batch) {
 
 		for (int i = 0; i < numOfOps; i++) {
 			Request req;
+			req.opcode = "003"; //003: insert
 			req.client_ip = "localhost";
 			req.client_port = client_listen_port;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;

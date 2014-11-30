@@ -508,7 +508,7 @@ int ZHTClient::addToBatch(Request item, ZPack &batch) {
 	newItem->set_val(item.val);
 	newItem->set_client_ip(item.client_ip);
 	newItem->set_client_port(item.client_port);
-//	newItem->set_opcode(item.opcode);
+	newItem->set_opcode(item.opcode);
 	newItem->set_max_wait_time(item.max_tolerant_latency);
 	newItem->set_consistency(item.consistency);
 	return 0;
