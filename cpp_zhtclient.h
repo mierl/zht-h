@@ -98,8 +98,8 @@ public:
 	int send_batch(ZPack &batch); // called by ZHTClient.commonOp, but maybe not here.
 	static int makeBatch(list<Request> src, ZPack &batch);
 	static int addToBatch(Request item, ZPack &batch); // by GPB
-	void* client_receiver_thread(void* arg);
-
+	static void* client_receiver_thread(void* arg);
+	int start_receiver_thread(int port);
 	//end.
 private:
 	int commonOp(const string &opcode, const string &key, const string &val,
@@ -109,9 +109,9 @@ private:
 	string extract_value(const string &returnStr);
 
 	//Tony: ZHT-H addtion
-	map<string, string> req_results_map;
+	static map<string, string> req_results_map;
 	//map<string, string> req_ret_status_map;
-	bool CLIENT_RECEIVE_RUN;
+	static bool CLIENT_RECEIVE_RUN;
 
 private:
 	ProtoProxy *_proxy;
