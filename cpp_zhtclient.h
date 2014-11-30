@@ -65,6 +65,13 @@ extern bool CLIENT_RECEIVE_RUN; //Need to be define in the cpp file.
 extern map<string, string> req_results_map;
 //Tony: request for batch processing end.
 
+typedef struct recv_thread_args {
+	int client_listen_port;
+
+} recv_args;
+
+
+
 class ZHTClient {
 
 public:
@@ -110,7 +117,7 @@ private:
 	string extract_value(const string &returnStr);
 
 	//Tony: ZHT-H addtion
-
+	recv_args thread_arg;
 	//map<string, string> req_ret_status_map;
 
 

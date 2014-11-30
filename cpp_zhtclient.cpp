@@ -46,7 +46,7 @@
 #include "bigdata_transfer.h"
 #include "tcp_proxy_stub.h"
 #include "ZHTUtil.h"
-
+#include <unistd.h>
 using namespace iit::datasys::zht::dm;
 
 ZHTClient::ZHTClient() :
@@ -345,11 +345,6 @@ string ZHTClient::commonOpInternal(const string &opcode, const string &key,
 	return sstatus;
 }
 
-typedef struct recv_thread_args {
-	int client_listen_port;
-
-} recv_args;
-
 
 //Duplicated from ip_proxy_stub.cpp
 int loopedrecv(int sock, void *senderAddr, string &srecv) {
@@ -419,11 +414,11 @@ int sendTo_BD(int sock, const void* sendbuf, int sendcount) {
 }
 
 pthread_t ZHTClient::start_receiver_thread(int port){
-	recv_args arg;
-	arg.client_listen_port = port;
+	//recv_args arg;
+	thread_arg.client_listen_port = port;
 
 	pthread_t th;
-	pthread_create(&th, NULL, ZHTClient::client_receiver_thread, (void*)&arg);
+	pthread_create(&th, NULL, ZHTClient::client_receiver_thread, (void*)&thread_arg);
 
 	//pthread_join(th, NULL);
 	// pthread_create(&id1, NULL, ZHTClient::listeningSocket, (void *)&_param);
@@ -436,7 +431,7 @@ map<string, string> req_results_map; //needed for global variables.
 void * ZHTClient::client_receiver_thread(void* argum) {
 	cout << "client thread started."<<endl;
 	recv_args *args = (recv_args *) argum;
-	int port = 50009;//args->client_listen_port;
+	int port = args->client_listen_port;
 
 	struct sockaddr_in svrAdd_in;
 	int svrSock = -1;
@@ -473,10 +468,11 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 	int infd;
 	struct sockaddr_in client_addr;
 	socklen_t clilen;
+	int connfd = -1;
 
 	while (CLIENT_RECEIVE_RUN) {
 
-		int connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
+		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
 		string result;
 		int recvcount = loopedrecv(connfd, NULL, result);
 		ZPack pack;
@@ -495,6 +491,7 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 		CLIENT_RECEIVE_RUN = false;
 		//How to handle received result?
 	}
+	close(connfd);
 	//return 0;
 }
 
