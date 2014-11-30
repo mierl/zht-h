@@ -419,10 +419,10 @@ int sendTo_BD(int sock, const void* sendbuf, int sendcount) {
 }
 
 int ZHTClient::start_receiver_thread(int port){
-	recv_args* arg;
-	arg->client_listen_port = port;
-	pthread_t *th;
-	cout << pthread_create(th, NULL, ZHTClient::client_receiver_thread, (void*)&arg) <<endl;
+	recv_args arg;
+	arg.client_listen_port = port;
+	pthread_t th;
+	cout << pthread_create(&th, NULL, ZHTClient::client_receiver_thread, (void*)&arg) <<endl;
 	// pthread_create(&id1, NULL, ZHTClient::listeningSocket, (void *)&_param);
 	return 0;
 }
