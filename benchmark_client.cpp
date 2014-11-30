@@ -53,7 +53,7 @@ int valLen = 118;
 vector<string> pkgList;
 bool IS_BATCH = false;
 ZPack batch_pack;
-
+int client_listen_port = 50009;
 void init_packages(bool is_batch) {
 
 	if (is_batch) {
@@ -63,7 +63,7 @@ void init_packages(bool is_batch) {
 		for (int i = 0; i < numOfOps; i++) {
 			Request req;
 			req.client_ip = "localhost";
-			req.client_port = 50009;
+			req.client_port = client_listen_port;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
 			req.key = HashUtil::randomString(keyLen);
 			req.val = HashUtil::randomString(valLen);
@@ -236,7 +236,7 @@ float benchmarkRemove() {
 }
 
 int benchmarkBatch() {
-	zc.start_receiver_thread(50009);
+	pthread_t th = zc.start_receiver_thread(client_listen_port);
 	sleep(1);
 	cout << "starting batch benchmark" << endl;
 
@@ -249,6 +249,7 @@ int benchmarkBatch() {
 	}
 
 	zc.send_batch(batch_pack);
+	pthread_join(th, NULL);
 	return 0;
 
 

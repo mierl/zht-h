@@ -100,7 +100,7 @@ public:
 	static int makeBatch(list<Request> src, ZPack &batch);
 	static int addToBatch(Request item, ZPack &batch); // by GPB
 	static void* client_receiver_thread(void* arg);
-	int start_receiver_thread(int port);
+	pthread_t start_receiver_thread(int port);
 	//end.
 private:
 	int commonOp(const string &opcode, const string &key, const string &val,

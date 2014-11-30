@@ -418,13 +418,15 @@ int sendTo_BD(int sock, const void* sendbuf, int sendcount) {
 	return sentSize;
 }
 
-int ZHTClient::start_receiver_thread(int port){
+pthread_t ZHTClient::start_receiver_thread(int port){
 	recv_args arg;
 	arg.client_listen_port = port;
 	pthread_t th;
-	cout << pthread_create(&th, NULL, ZHTClient::client_receiver_thread, (void*)&arg) <<endl;
+	pthread_create(&th, NULL, ZHTClient::client_receiver_thread, (void*)&arg);
+
+	//pthread_join(th, NULL);
 	// pthread_create(&id1, NULL, ZHTClient::listeningSocket, (void *)&_param);
-	return 0;
+	return th;
 }
 
 bool CLIENT_RECEIVE_RUN = true; //needed for global variables.
@@ -488,9 +490,10 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 			}
 		}
 
+		CLIENT_RECEIVE_RUN = false;
 		//How to handle received result?
 	}
-	return 0;
+	//return 0;
 }
 
 int results_handler(string result){
