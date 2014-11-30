@@ -81,7 +81,7 @@ private:
 	string lookup_shared(const ZPack &zpack);
 	string append_shared(const ZPack &zpack);
 	string remove_shared(const ZPack &zpack);
-	static int addToBatch(BatchItem item, ZPack &batch); // by GPB
+
 
 	string process_batch(const ZPack &zpack);
 	int _msg_maxsize;
