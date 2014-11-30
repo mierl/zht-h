@@ -236,7 +236,7 @@ float benchmarkRemove() {
 }
 
 int benchmarkBatch() {
-
+	zc.start_receiver_thread(50009);
 	cout << "starting batch benchmark" << endl;
 
 	int n = batch_pack.batch_item_size();

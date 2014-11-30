@@ -479,6 +479,8 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 			BatchItem item = pack.batch_item(i);
 			if(0 == item.opcode().compare("001")){//if lookup. Maybe need to return other status in string form.
 				ZHTClient::req_results_map.insert(std::pair<string, string>(item.key(), item.val()));
+				cout << "Client listening thread received: key = "<< item.key()<<endl;
+				cout << "Value = "<< item.val()<<endl;
 			}
 		}
 
