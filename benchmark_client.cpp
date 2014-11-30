@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
 	string zhtConf = "";
 	string neighborConf = "";
 
-	IS_BATCH = true;
+	IS_BATCH = false;
 	int c;
 	while ((c = getopt(argc, argv, "z:n:o:h")) != -1) {
 		switch (c) {
