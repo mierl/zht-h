@@ -56,7 +56,7 @@ public:
 	virtual ~ZHTUtil();
 
 	HostEntity getHostEntityByKey(const string& msg);
-
+	static string getLocalIP(void);
 private:
 	HostEntity buildHostEntity(const string& host, const uint& port);
 };

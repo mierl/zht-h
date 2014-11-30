@@ -129,9 +129,9 @@ string HTWorker::run(const char *buf) {
 }
 
 string HTWorker::process_batch(const ZPack &zpack){
-	cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
+//	cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
 	cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
-	cout << "iterating over batch items and processing... " << endl;
+//	cout << "iterating over batch items and processing... " << endl;
 
 	ZPack response_pack;
 	response_pack.set_pack_type(ZPack_Pack_type_BATCH_REQ);
@@ -181,7 +181,7 @@ string HTWorker::process_batch(const ZPack &zpack){
 			newItem->set_consistency(batch_item.consistency());
 	}
 
-	cout << "Each item in batch processed, sending back result packet" << endl;
+	//cout << "Each item in batch processed, sending back result packet" << endl;
 	response_pack.set_client_ip(response_pack.batch_item(0).client_ip());
 	response_pack.set_client_port(response_pack.batch_item(0).client_port());
 	string msg = response_pack.SerializeAsString();

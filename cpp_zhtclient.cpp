@@ -429,7 +429,7 @@ bool CLIENT_RECEIVE_RUN = true; //needed for global variables.
 map<string, string> req_results_map; //needed for global variables.
 
 void * ZHTClient::client_receiver_thread(void* argum) {
-	cout << "client thread started."<<endl;
+	//cout << "client thread started."<<endl;
 	recv_args *args = (recv_args *) argum;
 	int port = args->client_listen_port;
 
@@ -475,18 +475,18 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
 		string result;
 		int recvcount = loopedrecv(connfd, NULL, result);
-		ZPack pack;
-		pack.ParseFromString(result);
-
-		for(int i =0; i<pack.batch_item_size(); i++){
-			BatchItem item = pack.batch_item(i);
-			//cout << "Client listening thread received: key = "<< item.key()<<endl;
-			if(0 == item.opcode().compare("003")){//if lookup. Maybe need to return other status in string form.
-				req_results_map.insert(std::pair<string, string>(item.key(), item.val()));
-				cout << "Client listening thread received: key = "<< item.key()<<endl;
-				cout << "Value = "<< item.val()<<endl;
-			}
-		}
+//		ZPack pack;
+//		pack.ParseFromString(result);
+//
+//		for(int i =0; i<pack.batch_item_size(); i++){
+//			BatchItem item = pack.batch_item(i);
+//			//cout << "Client listening thread received: key = "<< item.key()<<endl;
+//			if(0 == item.opcode().compare("003")){//if lookup. Maybe need to return other status in string form.
+//				req_results_map.insert(std::pair<string, string>(item.key(), item.val()));
+//				//cout << "Client listening thread received: key = "<< item.key()<<endl;
+//				//cout << "Value = "<< item.val()<<endl;
+//			}
+//		}
 
 		CLIENT_RECEIVE_RUN = false;
 		//How to handle received result?

@@ -59,18 +59,18 @@ void init_packages(bool is_batch) {
 	if (is_batch) {
 
 		batch_pack.set_pack_type(ZPack_Pack_type_BATCH_REQ);
-
+		string ip = ZHTUtil::getLocalIP();
 		for (int i = 0; i < numOfOps; i++) {
 			Request req;
 			req.opcode = "003"; //003: insert
-			req.client_ip = "localhost";
+			req.client_ip = ip;////"localhost";
 			req.client_port = client_listen_port;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
 			req.key = HashUtil::randomString(keyLen);
 			req.val = HashUtil::randomString(valLen);
 			ZHTClient::addToBatch(req, batch_pack);
 		}
-		cout << "Total items added to batch: " << numOfOps << endl;
+		//cout << "Total items added to batch: " << numOfOps << endl;
 
 	} else {
 		for (int i = 0; i < numOfOps; i++) {
@@ -113,6 +113,7 @@ int benchmarkInsert() {
 	char buf[200];
 	sprintf(buf, "Inserted packages, %d, %d, cost(ms), %f", numOfOps - errCount,
 			numOfOps, end - start);
+	cout << "Average latency: "<< (end-start)/numOfOps <<"ms."<<endl;
 	cout << buf << endl;
 
 	return 0;
@@ -239,22 +240,20 @@ float benchmarkRemove() {
 int benchmarkBatch() {
 	pthread_t th = zc.start_receiver_thread(client_listen_port);
 	//sleep(1);
-	cout << "starting batch benchmark" << endl;
+	//cout << "starting batch benchmark" << endl;
 
 	int n = batch_pack.batch_item_size();
-	cout << "Number of batch items" <<  n << endl;
+	//cout << "Number of batch items" <<  n << endl;
 
-	for(int i = 0; i<n; i++){
-		//cout <<"zpack.batch_item(i).key: "<<batch_pack.batch_item(i).key() << endl;
-		//cout <<"zpack.batch_item(i).val: "<<batch_pack.batch_item(i).val() << endl<< endl;
-	}
-
+	double start = TimeUtil::getTime_msec();
 	zc.send_batch(batch_pack);
 	pthread_join(th, NULL);
+	double end = TimeUtil::getTime_msec();
+
+	cout << "Batch benchmark time in ms: "<< end - start <<endl;
+	cout << "Average latency: "<< (end-start)/numOfOps <<endl;
+
 	return 0;
-
-
-
 }
 
 int benchmark(string &zhtConf, string &neighborConf) {
@@ -275,11 +274,11 @@ int benchmark(string &zhtConf, string &neighborConf) {
 	}else{
 		benchmarkInsert();
 
-		benchmarkLookup();
+		//benchmarkLookup();
 
-		benchmarkAppend();
+		//benchmarkAppend();
 
-		benchmarkRemove();
+		//benchmarkRemove();
 	}
 
 
@@ -303,7 +302,7 @@ int main(int argc, char **argv) {
 
 	IS_BATCH = false;
 	int c;
-	while ((c = getopt(argc, argv, "z:n:o:h")) != -1) {
+	while ((c = getopt(argc, argv, "z:n:o:h:b")) != -1) {
 		switch (c) {
 		case 'z':
 			zhtConf = string(optarg);
@@ -316,6 +315,9 @@ int main(int argc, char **argv) {
 			break;
 		case 'h':
 			printHelp = 1;
+			break;
+		case 'b':
+			IS_BATCH = true;
 			break;
 		default:
 			fprintf(stderr, "Illegal argument \"%c\"\n", c);
