@@ -62,8 +62,8 @@ void init_packages(bool is_batch) {
 
 		for (int i = 0; i < numOfOps; i++) {
 			Request req;
-			req.client_ip = "client_ip";
-			req.client_port = 5000;
+			req.client_ip = "localhost";
+			req.client_port = 50009;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
 			req.key = HashUtil::randomString(keyLen);
 			req.val = HashUtil::randomString(valLen);

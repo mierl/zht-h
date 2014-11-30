@@ -431,6 +431,7 @@ bool CLIENT_RECEIVE_RUN = true; //needed for global variables.
 map<string, string> req_results_map; //needed for global variables.
 
 void * ZHTClient::client_receiver_thread(void* argum) {
+	cout << "client thread started."<<endl;
 	recv_args *args = (recv_args *) argum;
 	int port = args->client_listen_port;
 
