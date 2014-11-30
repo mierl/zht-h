@@ -421,6 +421,7 @@ int sendTo_BD(int sock, const void* sendbuf, int sendcount) {
 pthread_t ZHTClient::start_receiver_thread(int port){
 	recv_args arg;
 	arg.client_listen_port = port;
+
 	pthread_t th;
 	pthread_create(&th, NULL, ZHTClient::client_receiver_thread, (void*)&arg);
 
@@ -435,7 +436,7 @@ map<string, string> req_results_map; //needed for global variables.
 void * ZHTClient::client_receiver_thread(void* argum) {
 	cout << "client thread started."<<endl;
 	recv_args *args = (recv_args *) argum;
-	int port = args->client_listen_port;
+	int port = 50009;//args->client_listen_port;
 
 	struct sockaddr_in svrAdd_in;
 	int svrSock = -1;
@@ -483,7 +484,8 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 
 		for(int i =0; i<pack.batch_item_size(); i++){
 			BatchItem item = pack.batch_item(i);
-			if(0 == item.opcode().compare("001")){//if lookup. Maybe need to return other status in string form.
+			cout << "Client listening thread received: key = "<< item.key()<<endl;
+			if(0 == item.opcode().compare("003")){//if lookup. Maybe need to return other status in string form.
 				req_results_map.insert(std::pair<string, string>(item.key(), item.val()));
 				cout << "Client listening thread received: key = "<< item.key()<<endl;
 				cout << "Value = "<< item.val()<<endl;

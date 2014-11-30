@@ -310,7 +310,7 @@ bool TCPStub::recvsend(ProtoAddr addr, const void *recvbuf) {
 
 		int sock = tcp.makeClientSocket(pack.client_ip(), pack.client_port());
 
-		tcp.sendTo(sock, (void*)result.c_str(), result.size());
+		int sent = tcp.sendTo(sock, (void*)result.c_str(), result.size());
 
 	}else{
 		int sentsize = sendBack(addr, sendbuf, sendcount);
