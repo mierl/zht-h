@@ -564,7 +564,7 @@ int ZHTClient::send_batch(ZPack &batch) {
 //	sendTo_BD();
 
 
-	cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  " << buf << endl;
+	//cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  " << buf << endl;
 	return 0;
 
 	//...parse status and result
