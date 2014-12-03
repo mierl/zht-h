@@ -491,7 +491,7 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 		CLIENT_RECEIVE_RUN = false;
 		//How to handle received result?
 	}
-	close(connfd);
+	//close(connfd);
 	//return 0;
 }
 

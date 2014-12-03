@@ -312,6 +312,8 @@ bool TCPStub::recvsend(ProtoAddr addr, const void *recvbuf) {
 
 		int sent = tcp.sendTo(sock, (void*)result.c_str(), result.size());
 
+		close(sock);
+
 	}else{
 		int sentsize = sendBack(addr, sendbuf, sendcount);
 		sent_bool = sentsize == sendcount;
