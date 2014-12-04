@@ -435,6 +435,7 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 
 	struct sockaddr_in svrAdd_in;
 	int svrSock = -1;
+	int reuse_addr = 1;
 	//printf("success 1\n");
 	memset(&svrAdd_in, 0, sizeof(struct sockaddr_in));
 	svrAdd_in.sin_family = AF_INET;
@@ -442,6 +443,9 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 	svrAdd_in.sin_port = htons(port);
 	//printf("success 2\n");
 	svrSock = socket(AF_INET, SOCK_STREAM, 0);
+
+	int ret = setsockopt(svrSock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr,
+			sizeof(reuse_addr));
 	if (bind(svrSock, (struct sockaddr*) &svrAdd_in, sizeof(struct sockaddr))
 			< 0) {
 		perror("bind error");
@@ -455,9 +459,8 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 	//printf("listen \n");
 
 	/* make the socket reusable */
-	int reuse_addr = 1;
-	int ret = setsockopt(svrSock, SOL_SOCKET, SO_REUSEADDR, &reuse_addr,
-			sizeof(reuse_addr));
+
+
 	if (ret < 0) {
 		cerr << "reuse socket failed: [" << svrSock << "], " << endl;
 		return NULL;
