@@ -63,7 +63,7 @@ void init_packages(bool is_batch) {
 		for (int i = 0; i < numOfOps; i++) {
 			Request req;
 			req.opcode = "003"; //003: insert
-			req.client_ip = ip;////"localhost";
+			req.client_ip = ip; ////"localhost";
 			req.client_port = client_listen_port;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
 			req.key = HashUtil::randomString(keyLen);
@@ -113,7 +113,7 @@ int benchmarkInsert() {
 	char buf[200];
 	sprintf(buf, "Inserted packages, %d, %d, cost(ms), %f", numOfOps - errCount,
 			numOfOps, end - start);
-	cout << "Average latency: "<< (end-start)/numOfOps <<"ms."<<endl;
+	cout << "Average latency: " << (end - start) / numOfOps << "ms." << endl;
 	cout << buf << endl;
 
 	return 0;
@@ -250,8 +250,8 @@ int benchmarkBatch() {
 	pthread_join(th, NULL);
 	double end = TimeUtil::getTime_msec();
 
-	cout << "Batch benchmark time in ms: "<< end - start <<endl;
-	cout << "Average latency: "<< (end-start)/numOfOps <<endl;
+	cout << "Batch benchmark time in ms: " << end - start << endl;
+	cout << "Average latency: " << (end - start) / numOfOps << endl;
 
 	return 0;
 }
@@ -268,10 +268,10 @@ int benchmark(string &zhtConf, string &neighborConf) {
 
 	init_packages(IS_BATCH);
 
-	if(IS_BATCH){
+	if (IS_BATCH) {
 		benchmarkBatch();
 
-	}else{
+	} else {
 		benchmarkInsert();
 
 		//benchmarkLookup();
@@ -280,8 +280,6 @@ int benchmark(string &zhtConf, string &neighborConf) {
 
 		//benchmarkRemove();
 	}
-
-
 
 	zc.teardown();
 
@@ -302,7 +300,7 @@ int main(int argc, char **argv) {
 
 	IS_BATCH = false;
 	int c;
-	while ((c = getopt(argc, argv, "z:n:o:h:b")) != -1) {
+	while ((c = getopt(argc, argv, "z:n:o:h:v:b")) != -1) {
 		switch (c) {
 		case 'z':
 			zhtConf = string(optarg);
@@ -316,8 +314,14 @@ int main(int argc, char **argv) {
 		case 'h':
 			printHelp = 1;
 			break;
+//		case 'k':
+//			keyLen = atoi(optarg);
+//			break;
+		case 'v':
+			valLen = atoi(optarg);
+			break;
 		case 'b':
-			IS_BATCH = true;
+				IS_BATCH = true;
 			break;
 		default:
 			fprintf(stderr, "Illegal argument \"%c\"\n", c);
