@@ -311,9 +311,7 @@ int main(int argc, char **argv) {
 		case 'o':
 			numOfOps = atoi(optarg);
 			break;
-		case 'h':
-			printHelp = 1;
-			break;
+
 //		case 'k':
 //			keyLen = atoi(optarg);
 //			break;
@@ -321,7 +319,10 @@ int main(int argc, char **argv) {
 			valLen = atoi(optarg);
 			break;
 		case 'b':
-				IS_BATCH = true;
+			IS_BATCH = true;
+			break;
+		case 'h':
+			printHelp = 1;
 			break;
 		default:
 			fprintf(stderr, "Illegal argument \"%c\"\n", c);
