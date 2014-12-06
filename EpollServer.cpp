@@ -524,7 +524,7 @@ void EpollServer::serve() {
 					int done = 0;
 
 					while (1) {
-						usleep(1);//fix cross nodes issues
+						//usleep(1);//fix cross nodes issues: only for ec2 vms, physical machined don't neet this.
 						char buf[Env::BUF_SIZE];
 						memset(buf, 0, sizeof(buf));
 						//char *buf = (char*) calloc(Env::BUF_SIZE, sizeof(char));
