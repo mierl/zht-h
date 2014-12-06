@@ -71,6 +71,26 @@ typedef struct recv_thread_args {
 } recv_args;
 
 
+class Batch{
+public:
+	Batch();
+	bool check_condition_deadline(void);
+	bool check_condition_deadline_num_item(int max_item);
+	bool check_condition_deadline_batch_size_byte(unsigned long max_size);
+	//A series of methods, test the condition by different policy
+	int addToBatch(Request item);
+	int send_batch(void);
+	int makeBatch(list<Request> src);
+	static int send_batch(ZPack &batch);
+	unsigned int batch_num_item;
+	unsigned long batch_size_byte;
+	int latency_time;
+private:
+	ZPack req_batch;
+	double batch_deadline;
+
+};
+
 
 class ZHTClient {
 
@@ -103,9 +123,9 @@ public:
 	//Tony: ZHT-H addtion
 	//TODO: implement following methods.
 	int init();
-	int send_batch(ZPack &batch); // called by ZHTClient.commonOp, but maybe not here.
-	static int makeBatch(list<Request> src, ZPack &batch);
-	static int addToBatch(Request item, ZPack &batch); // by GPB
+	//int send_batch(ZPack &batch); // called by ZHTClient.commonOp, but maybe not here.
+	//static int makeBatch(list<Request> src, ZPack &batch);
+	//static int addToBatch(Request item, ZPack &batch); // by GPB
 	static void* client_receiver_thread(void* arg);
 	pthread_t start_receiver_thread(int port);
 	//end.

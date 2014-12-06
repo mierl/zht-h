@@ -54,11 +54,12 @@ vector<string> pkgList;
 bool IS_BATCH = false;
 ZPack batch_pack;
 int client_listen_port = 50009;
+Batch batch;
 void init_packages(bool is_batch) {
 
 	if (is_batch) {
 
-		batch_pack.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+		//batch_pack.set_pack_type(ZPack_Pack_type_BATCH_REQ);
 		string ip = ZHTUtil::getLocalIP();
 		for (int i = 0; i < numOfOps; i++) {
 			Request req;
@@ -68,7 +69,7 @@ void init_packages(bool is_batch) {
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
 			req.key = HashUtil::randomString(keyLen);
 			req.val = HashUtil::randomString(valLen);
-			ZHTClient::addToBatch(req, batch_pack);
+			batch.addToBatch(req);
 		}
 		//cout << "Total items added to batch: " << numOfOps << endl;
 
@@ -102,7 +103,7 @@ int benchmarkInsert() {
 		pkg.ParseFromString(pkg_str);
 
 		int ret = zc.insert(pkg.key(), pkg.val());
-
+		//cout << "insert, val = "<<pkg.val()<<endl;
 		if (ret < 0) {
 			errCount++;
 		}
@@ -184,12 +185,13 @@ float benchmarkLookup() {
 		pkg.ParseFromString(pkg_str);
 
 		int ret = zc.lookup(pkg.key(), result);
-		//cout << "Found result: "<< result << endl;
+		//cout << "1 Found result, value: "<< result << endl;
 		if (ret < 0) {
 			errCount++;
 		} else if (result.empty()) { //empty string
 			errCount++;
 		}
+
 	}
 
 	end = TimeUtil::getTime_msec();
@@ -246,7 +248,8 @@ int benchmarkBatch() {
 	//cout << "Number of batch items" <<  n << endl;
 
 	double start = TimeUtil::getTime_msec();
-	zc.send_batch(batch_pack);
+	//Batch::send_batch(batch_pack);
+	batch.send_batch();
 	pthread_join(th, NULL);
 	double end = TimeUtil::getTime_msec();
 

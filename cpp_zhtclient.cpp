@@ -49,6 +49,10 @@
 #include <unistd.h>
 using namespace iit::datasys::zht::dm;
 
+
+
+int MSG_MAXSIZE = 1000*1000*2;
+
 ZHTClient::ZHTClient() :
 		_proxy(0), _msg_maxsize(0) {
 
@@ -71,7 +75,7 @@ ZHTClient::~ZHTClient() {
 int ZHTClient::init(const string& zhtConf, const string& neighborConf) {
 
 	ConfHandler::initConf(zhtConf, neighborConf);
-
+	MSG_MAXSIZE = Env::get_msg_maxsize();
 	_msg_maxsize = Env::get_msg_maxsize();
 
 	_proxy = ProxyStubFactory::createProxy();
@@ -504,33 +508,8 @@ int results_handler(string result) {
 	return 0;
 }
 
-int ZHTClient::addToBatch(Request item, ZPack &batch) {
-	BatchItem* newItem = batch.add_batch_item();
-	newItem->set_key(item.key);
-	newItem->set_val(item.val);
-	newItem->set_client_ip(item.client_ip);
-	newItem->set_client_port(item.client_port);
-	newItem->set_opcode(item.opcode);
-	newItem->set_max_wait_time(item.max_tolerant_latency);
-	newItem->set_consistency(item.consistency);
-	return 0;
-}
 
-int ZHTClient::makeBatch(list<Request> src, ZPack &batch) {
 
-	list<Request>::iterator it;
-	for (it = src.begin(); it != src.end(); it++) {
-		addToBatch(*it, batch);
-	}
-
-	if (0 != batch.batch_item_size()) {
-		batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
-		batch.set_key(src.front().key); // use any key for batch's key, since they all go to one place.
-	} else
-		batch.set_pack_type(ZPack_Pack_type_SINGLE);
-
-	return 0;
-}
 
 int ZHTClient::teardown() {
 
@@ -540,16 +519,90 @@ int ZHTClient::teardown() {
 		return -1;
 }
 
-int ZHTClient::send_batch(ZPack &batch) {
+
+
+//This function accumulate requests and send in batch when a condition is satisfied
+//It use a hash map track status of active requests
+//This method is called from a client service loop, which keep receiving requests.
+
+Batch::Batch(){
+	this->req_batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+	this->batch_deadline = TIME_MAX;
+}
+
+bool Batch::check_condition_deadline(void){
+
+	return (this->batch_deadline - TimeUtil::getTime_usec() <= this->latency_time);
+
+}
+
+bool Batch::check_condition_deadline_num_item(int max_item){
+
+	return(this->check_condition_deadline() || this->batch_num_item >= max_item);
+
+}
+
+bool Batch::check_condition_deadline_batch_size_byte(unsigned long max_size){
+
+	return(this->check_condition_deadline() || this->batch_size_byte >= max_size);
+
+}
+
+
+int Batch::addToBatch(Request item) {
+
+	item.arrival_time = TimeUtil::getTime_usec();
+
+	BatchItem* newItem = this->req_batch.add_batch_item();
+	newItem->set_key(item.key);
+	newItem->set_val(item.val);
+	newItem->set_client_ip(item.client_ip);
+	newItem->set_client_port(item.client_port);
+	newItem->set_opcode(item.opcode);
+	newItem->set_max_wait_time(item.max_tolerant_latency);
+	newItem->set_consistency(item.consistency);
+
+	//Used to update batch deadline.
+	double in_req_deadline = item.arrival_time
+			+ item.max_tolerant_latency * 1000; //max_tolerant_latency is in ms
+
+	if (this->batch_deadline > in_req_deadline) { // new req is the most urgent one
+		this->batch_deadline = in_req_deadline;
+	}
+
+	this->batch_size_byte = this->req_batch.ByteSize();
+
+	this->batch_num_item++;
+
+	return 0;
+}
+
+int Batch::makeBatch(list<Request> src) {
+
+	list<Request>::iterator it;
+	for (it = src.begin(); it != src.end(); it++) {
+		this->addToBatch(*it);
+	}
+
+	if (0 != this->req_batch.batch_item_size()) {
+		this->req_batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+		this->req_batch.set_key(src.front().key); // use any key for batch's key, since they all go to one place.
+	} else
+		this->req_batch.set_pack_type(ZPack_Pack_type_SINGLE);
+
+	return 0;
+}
+
+int Batch::send_batch(void) {
 
 	// set batch type for message
-	batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+	this->req_batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
 
 	// serialize the message to string
-	string msg = batch.SerializeAsString();
+	string msg = this->req_batch.SerializeAsString();
 
-	char *buf = (char*) calloc(_msg_maxsize, sizeof(char));
-	size_t msz = _msg_maxsize;
+	char *buf = (char*) calloc(MSG_MAXSIZE, sizeof(char));
+	size_t msz = MSG_MAXSIZE;
 
 	ZPack temp;
 	temp.ParseFromString(msg.c_str());
@@ -562,45 +615,44 @@ int ZHTClient::send_batch(ZPack &batch) {
 	HostEntity he = zu.getHostEntityByKey(msg);
 	int sock = tcp.getSockCached(he.host, he.port);
 	tcp.sendTo(sock, (void*) msg.c_str(), msg.size());
-//	sock
-//	sendTo_BD();
-
 	//cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  " << buf << endl;
 	return 0;
-
-	//...parse status and result
-	/*
-	 string sstatus;
-
-	 string srecv(buf);
-
-	 if (srecv.empty()) {
-
-	 sstatus = Const::ZSC_REC_SRVEXP;
-	 } else {
-
-	 result = srecv.substr(3); //the left, if any, is lookup result or second-try zpack
-	 sstatus = srecv.substr(0, 3); //status returned, the first three chars, like 001, -98...
-	 }
-
-	 free(buf);
-	 return sstatus;
-	 */
 }
 
-//This function accumulate requests and send in batch when a condition is satisfied
-//It use a hash map track status of active requests
-//This method is called from a client service loop, which keep receiving requests.
+int Batch::send_batch(ZPack &batch) {
+
+	// set batch type for message
+	batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+
+	// serialize the message to string
+	string msg = batch.SerializeAsString();
+
+	char *buf = (char*) calloc(MSG_MAXSIZE, sizeof(char));
+	size_t msz = MSG_MAXSIZE;
+
+	ZPack temp;
+	temp.ParseFromString(msg.c_str());
+
+	/*send to and receive from*/
+	//_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
+	TCPProxy tcp;
+
+	ZHTUtil zu;
+	HostEntity he = zu.getHostEntityByKey(msg);
+	int sock = tcp.getSockCached(he.host, he.port);
+	tcp.sendTo(sock, (void*) msg.c_str(), msg.size());
+	//cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  " << buf << endl;
+	return 0;
+}
 
 class AggregatedSender {
 public:
 
 	int req_handler(Request in_req, int policy); //call this every time when a request is sent by the client
 	int batch_monitor(int para, ZHTClient zc);
+	//A monitor thread, watch the condition and decide when to send the batch.Running from the beginning. multiple policies applicable.
 	int init(void);
-	//A monitor thread, watch the condition and decide when to send the batch.
-	//Running from the beginning.
-	//multiple policies applicable.
+
 private:
 
 	//Track request status
@@ -609,6 +661,7 @@ private:
 	//Batch container
 	//list<Request> send_list;
 	ZPack req_batch;	//contains a list of requests
+	map<int, Batch> batch_map;//hold multiple batches, each for a dest server.
 	pthread_mutex_t mutex_monitor_condition;	// = PTHREAD_MUTEX_INITIALIZER;
 	pthread_mutex_t mutex_batch;	// = PTHREAD_MUTEX_INITIALIZER;
 	double batch_deadline;// = TIME_MAX;// batch -wide deadline, a absolute time stamp.
@@ -625,30 +678,30 @@ int AggregatedSender::init() {
 	return 0;
 }
 
-int AggregatedSender::req_handler(Request in_req, int policy) {
-
-	in_req.arrival_time = TimeUtil::getTime_usec();
-
-	this->req_stats_map.insert(std::pair<string, int>(in_req.key, 1));//1: stay in queue, 0 results returned.
-
-	//push req to queue, and update condition related parameters.
-	ZHTClient::addToBatch(in_req, this->req_batch);
-
-	double in_req_deadline = in_req.arrival_time
-			+ in_req.max_tolerant_latency * 1000; //max_tolerant_latency is in ms
-
-	if (this->batch_deadline >= in_req_deadline) { // new req is the most urgent one
-
-		pthread_mutex_lock(&mutex_monitor_condition);
-
-		this->batch_deadline = in_req_deadline;
-
-		pthread_mutex_unlock(&mutex_monitor_condition);
-
-	}
-
-	return 0;
-}
+//int AggregatedSender::req_handler(Request in_req, int policy) {
+//
+//	in_req.arrival_time = TimeUtil::getTime_usec();
+//
+//	this->req_stats_map.insert(std::pair<string, int>(in_req.key, 1));//1: stay in queue, 0 results returned.
+//
+//	//push req to queue, and update condition related parameters.
+//	ZHTClient::addToBatch(in_req, this->req_batch);
+//
+//	double in_req_deadline = in_req.arrival_time
+//			+ in_req.max_tolerant_latency * 1000; //max_tolerant_latency is in ms
+//
+//	if (this->batch_deadline >= in_req_deadline) { // new req is the most urgent one
+//
+//		pthread_mutex_lock(&mutex_monitor_condition);
+//
+//		this->batch_deadline = in_req_deadline;
+//
+//		pthread_mutex_unlock(&mutex_monitor_condition);
+//
+//	}
+//
+//	return 0;
+//}
 
 int AggregatedSender::batch_monitor(int para, ZHTClient zc) {
 	bool condition = false;
@@ -660,7 +713,7 @@ int AggregatedSender::batch_monitor(int para, ZHTClient zc) {
 		if (condition) {
 			pthread_mutex_lock(&mutex_batch);
 
-			zc.send_batch(this->req_batch);
+			Batch::send_batch(this->req_batch);
 
 			ZPack p = this->req_batch;
 			this->req_batch = ZPack();
