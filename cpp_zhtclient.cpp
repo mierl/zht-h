@@ -345,7 +345,6 @@ string ZHTClient::commonOpInternal(const string &opcode, const string &key,
 	return sstatus;
 }
 
-
 //Duplicated from ip_proxy_stub.cpp
 int loopedrecv(int sock, void *senderAddr, string &srecv) {
 
@@ -413,12 +412,13 @@ int sendTo_BD(int sock, const void* sendbuf, int sendcount) {
 	return sentSize;
 }
 
-pthread_t ZHTClient::start_receiver_thread(int port){
+pthread_t ZHTClient::start_receiver_thread(int port) {
 	//recv_args arg;
 	thread_arg.client_listen_port = port;
 
 	pthread_t th;
-	pthread_create(&th, NULL, ZHTClient::client_receiver_thread, (void*)&thread_arg);
+	pthread_create(&th, NULL, ZHTClient::client_receiver_thread,
+			(void*) &thread_arg);
 
 	//pthread_join(th, NULL);
 	// pthread_create(&id1, NULL, ZHTClient::listeningSocket, (void *)&_param);
@@ -460,7 +460,6 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 
 	/* make the socket reusable */
 
-
 	if (ret < 0) {
 		cerr << "reuse socket failed: [" << svrSock << "], " << endl;
 		return NULL;
@@ -498,7 +497,7 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 	//return 0;
 }
 
-int results_handler(string result){
+int results_handler(string result) {
 	ZPack res;
 	res.ParseFromString(result);
 
@@ -562,10 +561,9 @@ int ZHTClient::send_batch(ZPack &batch) {
 	ZHTUtil zu;
 	HostEntity he = zu.getHostEntityByKey(msg);
 	int sock = tcp.getSockCached(he.host, he.port);
-	tcp.sendTo(sock, (void*)msg.c_str(), msg.size());
+	tcp.sendTo(sock, (void*) msg.c_str(), msg.size());
 //	sock
 //	sendTo_BD();
-
 
 	//cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  " << buf << endl;
 	return 0;
@@ -611,16 +609,16 @@ private:
 	//Batch container
 	//list<Request> send_list;
 	ZPack req_batch;	//contains a list of requests
-	pthread_mutex_t mutex_monitor_condition = PTHREAD_MUTEX_INITIALIZER;
-	pthread_mutex_t mutex_batch = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_t mutex_monitor_condition;	// = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_t mutex_batch;	// = PTHREAD_MUTEX_INITIALIZER;
 	double batch_deadline;// = TIME_MAX;// batch -wide deadline, a absolute time stamp.
 	bool MONITOR_RUN;	// = false;
 	int latency_time;// = 500; //in microsec. Batch must go by this much time before deadline. It's left for transferring and svr side processing.
 };
 
 int AggregatedSender::init() {
-	//this->mutex_batch = PTHREAD_MUTEX_INITIALIZER;
-	//this->mutex_monitor_condition = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_init(&(this->mutex_monitor_condition), NULL);
+	pthread_mutex_init(&(this->mutex_batch), NULL);
 	this->batch_deadline = TIME_MAX;// batch -wide deadline, a absolute time stamp.
 	this->MONITOR_RUN = false;
 	this->latency_time = 500;
