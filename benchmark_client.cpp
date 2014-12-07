@@ -361,5 +361,5 @@ int main(int argc, char **argv) {
 void printUsage(char *argv_0) {
 
 	fprintf(stdout, "Usage:\n%s %s\n", argv_0,
-			"-z zht.conf -n neighbor.conf -o number_of_operations [-h(help)] ");
+			"-z zht.conf -n neighbor.conf -o number_of_operations -v length_value [-b (batching)] [-h(help)] ");
 }
