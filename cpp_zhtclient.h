@@ -71,42 +71,6 @@ typedef struct recv_thread_args {
 
 } recv_args;
 
-typedef struct monitor_send_thread_args{
-
-	int policy_index;
-	int num_item;
-	unsigned long batch_size;
-
-}monitor_args;
-
-class Batch{
-public:
-	Batch();
-	int init(void);
-	bool check_condition(int policy_index, int num_item, unsigned long batch_size);
-	bool check_condition_deadline(void);
-	bool check_condition_deadline_num_item(int max_item);
-	bool check_condition_deadline_batch_size_byte(unsigned long max_size);
-	//A series of methods, test the condition by different policy
-	int clear_batch(void);
-	int addToBatch(Request item);
-	int addToSwapBatch(Request item);
-	int send_batch(void);
-	int makeBatch(list<Request> src);
-	static int send_batch(ZPack &batch);
-	unsigned int batch_num_item;
-	unsigned long batch_size_byte;
-	int latency_time;
-private:
-	ZPack req_batch;
-	ZPack req_batch_swap;
-	bool in_sending;
-	double batch_deadline;
-	pthread_mutex_t mutex_batch_local;
-
-};
-
-
 class ZHTClient {
 
 public:
@@ -160,5 +124,74 @@ private:
 	ProtoProxy *_proxy;
 	int _msg_maxsize;
 };
+
+
+
+
+typedef struct monitor_send_thread_args{
+
+	int policy_index;
+	int num_item;
+	unsigned long batch_size;
+
+}monitor_args;
+
+class Batch{
+public:
+	Batch();
+	int init(void);
+	bool check_condition(int policy_index, int num_item, unsigned long batch_size);
+	bool check_condition_deadline(void);
+	bool check_condition_deadline_num_item(int max_item);
+	bool check_condition_deadline_batch_size_byte(unsigned long max_size);
+	//A series of methods, test the condition by different policy
+	int clear_batch(void);
+	int addToBatch(Request item);
+	int addToSwapBatch(Request item);
+	int send_batch(void);
+	int makeBatch(list<Request> src);
+	static int send_batch(ZPack &batch);
+	unsigned int batch_num_item;
+	unsigned long batch_size_byte;
+	int latency_time;
+private:
+	ZPack req_batch;
+	ZPack req_batch_swap;
+	bool in_sending;
+	double batch_deadline;
+	pthread_mutex_t mutex_batch_local;
+
+};
+
+class AggregatedSender {
+public:
+
+	int req_handler(Request in_req, string & immediate_result); //call this every time when a request is sent by the client
+	int init(void);
+	pthread_t start_batch_monitor_thread(monitor_args args);
+	int stop_batch_monitor_thread(void);
+	//A monitor thread, watch the condition and decide when to send the batch.Running from the beginning. multiple policies applicable.
+
+private:
+	void batch_monitor_thread(void);
+	//Track request status
+	map<string, int> req_stats_map;
+	//map<string, string> req_results_map;
+	//Batch container
+	//list<Request> send_list;
+	ZPack req_batch;	//contains a list of requests
+	vector<Batch> batch_vector;	//hold multiple batches, each for a dest server.
+	//pthread_mutex_t mutex_monitor_condition;	// = PTHREAD_MUTEX_INITIALIZER;
+	//pthread_mutex_t mutex_batch_all;	// = PTHREAD_MUTEX_INITIALIZER;
+	//pthread_mutex_t mutex_in_sending;
+	//double batch_deadline;// = TIME_MAX;// batch -wide deadline, a absolute time stamp.
+	bool MONITOR_RUN;	// = false;
+	int latency_time;// = 500; //in microsec. Batch must go by this much time before deadline. It's left for transferring and svr side processing.
+	monitor_args mon_args;
+};
+
+
+
+
 
 #endif /* ZHTCLIENT_H_ */

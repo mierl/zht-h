@@ -67,6 +67,7 @@ void init_packages(bool is_batch) {
 			req.client_ip = ip; ////"localhost";
 			req.client_port = client_listen_port;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
+			req.max_tolerant_latency = 0;
 			req.key = HashUtil::randomString(keyLen);
 			req.val = HashUtil::randomString(valLen);
 			batch.addToBatch(req);
@@ -255,6 +256,11 @@ int benchmarkBatch() {
 
 	cout << "Batch benchmark time in ms: " << end - start << endl;
 	cout << "Average latency: " << (end - start) / numOfOps << endl;
+
+	return 0;
+}
+
+int benchmarkBatch_condition_multi_servers(){
 
 	return 0;
 }
