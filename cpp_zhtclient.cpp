@@ -481,19 +481,13 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
 		string result;
 		int recvcount = loopedrecv(connfd, NULL, result);
-//		ZPack pack;
-//		pack.ParseFromString(result);
-//
-//		for(int i =0; i<pack.batch_item_size(); i++){
-//			BatchItem item = pack.batch_item(i);
-//			//cout << "Client listening thread received: key = "<< item.key()<<endl;
-//			if(0 == item.opcode().compare("003")){//if lookup. Maybe need to return other status in string form.
-//				req_results_map.insert(std::pair<string, string>(item.key(), item.val()));
-//				//cout << "Client listening thread received: key = "<< item.key()<<endl;
-//				//cout << "Value = "<< item.val()<<endl;
-//			}
-//		}
+		ZPack res;
 
+		res.ParseFromString(result);
+		for (int i =0; i < res.batch_item_size(); i++){
+			BatchItem batch_item = res.batch_item(i);
+			cout << "item_" << i+1<<", key = "<< batch_item.key()<<", val = "<< batch_item.val()<<endl;
+		}
 		CLIENT_RECEIVE_RUN = false;
 		//How to handle received result?
 	}
