@@ -715,11 +715,12 @@ public:
 
 	int req_handler(Request in_req, int policy); //call this every time when a request is sent by the client
 	int init(void);
-	void batch_monitor_thread(void* argu);
+	pthread_t start_batch_monitor_thread(monitor_args args);
+	int stop_batch_monitor_thread(void);
 	//A monitor thread, watch the condition and decide when to send the batch.Running from the beginning. multiple policies applicable.
 
 private:
-
+	void batch_monitor_thread(void);
 	//Track request status
 	map<string, int> req_stats_map;
 	//map<string, string> req_results_map;
@@ -733,6 +734,7 @@ private:
 	double batch_deadline;// = TIME_MAX;// batch -wide deadline, a absolute time stamp.
 	bool MONITOR_RUN;	// = false;
 	int latency_time;// = 500; //in microsec. Batch must go by this much time before deadline. It's left for transferring and svr side processing.
+	monitor_args mon_args;
 };
 
 int AggregatedSender::init() {
@@ -751,6 +753,25 @@ int AggregatedSender::init() {
 	return 0;
 }
 
+pthread_t AggregatedSender::start_batch_monitor_thread(monitor_args args){
+	//recv_args arg;
+	this->MONITOR_RUN = true;
+	this->mon_args = args;
+
+	pthread_t th;
+	pthread_create(&th, NULL, ZHTClient::client_receiver_thread,
+			NULL);
+
+	//pthread_join(th, NULL);
+	// pthread_create(&id1, NULL, ZHTClient::listeningSocket, (void *)&_param);
+	return th;
+}
+
+int AggregatedSender::stop_batch_monitor_thread(void){
+	this->MONITOR_RUN = false;
+	return 0;
+}
+
 int AggregatedSender::req_handler(Request in_req, int policy) {
 
 	int svr_index = HashUtil::genHash(in_req.key)
@@ -763,13 +784,13 @@ int AggregatedSender::req_handler(Request in_req, int policy) {
 }
 
 
-void AggregatedSender::batch_monitor_thread(void* argu) {
-	monitor_args* param = (monitor_args*)argu;
+void AggregatedSender::batch_monitor_thread(void) {
+	//monitor_args* param = (monitor_args*)argu;
 
 	//ZHTClient zc;
-	int policy_index = param->policy_index;
-	int num_item = param->num_item;
-	unsigned long batch_size = param->batch_size;
+	int policy_index = this->mon_args.policy_index;//param->policy_index;
+	int num_item = this->mon_args.num_item;
+	unsigned long batch_size = this->mon_args.batch_size;
 
 	bool condition = false;
 	while (this->MONITOR_RUN) {
