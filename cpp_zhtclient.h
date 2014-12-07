@@ -66,19 +66,31 @@ extern map<string, string> req_results_map;
 //Tony: request for batch processing end.
 
 typedef struct recv_thread_args {
+
 	int client_listen_port;
 
 } recv_args;
 
+typedef struct monitor_send_thread_args{
+
+	int policy_index;
+	int num_item;
+	unsigned long batch_size;
+
+}monitor_args;
 
 class Batch{
 public:
 	Batch();
+	int init(void);
+	bool check_condition(int policy_index, int num_item, unsigned long batch_size);
 	bool check_condition_deadline(void);
 	bool check_condition_deadline_num_item(int max_item);
 	bool check_condition_deadline_batch_size_byte(unsigned long max_size);
 	//A series of methods, test the condition by different policy
+	int clear_batch(void);
 	int addToBatch(Request item);
+	int addToSwapBatch(Request item);
 	int send_batch(void);
 	int makeBatch(list<Request> src);
 	static int send_batch(ZPack &batch);
@@ -87,7 +99,10 @@ public:
 	int latency_time;
 private:
 	ZPack req_batch;
+	ZPack req_batch_swap;
+	bool in_sending;
 	double batch_deadline;
+	pthread_mutex_t mutex_batch_local;
 
 };
 
