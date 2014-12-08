@@ -51,15 +51,21 @@ int numOfOps = -1;
 int keyLen = 10;
 int valLen = 118;
 vector<string> pkgList;
+vector<Request> rand_req_list;
 bool IS_BATCH = false;
+bool is_single_batch = true;
 ZPack batch_pack;
 int client_listen_port = 50009;
 Batch batch;
 void init_packages(bool is_batch) {
 
-	if (is_batch) {
+	srand(time(NULL));
 
-		//batch_pack.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+	int max_latency[] = { 1, 5, 10, 50, 100 };
+
+	if (is_batch) {
+		Batch batch;
+		batch.init();
 		string ip = ZHTUtil::getLocalIP();
 		for (int i = 0; i < numOfOps; i++) {
 			Request req;
@@ -67,12 +73,18 @@ void init_packages(bool is_batch) {
 			req.client_ip = ip; ////"localhost";
 			req.client_port = client_listen_port;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
-			req.max_tolerant_latency = 0;
+
+			req.max_tolerant_latency = max_latency[rand() % 5]; //randomly set max_latency, but
+
 			req.key = HashUtil::randomString(keyLen);
 			req.val = HashUtil::randomString(valLen);
-			batch.addToBatch(req);
+			if (is_single_batch) { // only send one batch, only one server.
+				batch.addToBatch(req);
+				//cout << "Total items added to batch: " << numOfOps << endl;
+			} else {//dynamic batching for multiple servers
+				rand_req_list.push_back(req);
+			}
 		}
-		//cout << "Total items added to batch: " << numOfOps << endl;
 
 	} else {
 		for (int i = 0; i < numOfOps; i++) {
@@ -240,7 +252,7 @@ float benchmarkRemove() {
 	return 0;
 }
 
-int benchmarkBatch() {
+int benchmark_single_batch() {
 	pthread_t th = zc.start_receiver_thread(client_listen_port);
 	//sleep(1);
 	//cout << "starting batch benchmark" << endl;
@@ -260,8 +272,24 @@ int benchmarkBatch() {
 	return 0;
 }
 
-int benchmarkBatch_condition_multi_servers(){
+int benchmark_dynamic_batching(void) {
+	AggregatedSender sender;
+	sender.init();
 
+	monitor_args args;
+	args.batch_size = 100000;
+	args.num_item = 100;
+	args.policy_index = 1;
+
+	sender.start_batch_monitor_thread(args);
+
+	string result;
+	for(vector<Request>::iterator it = rand_req_list.begin(); it != rand_req_list.end(); ++it){
+		sender.req_handler(*it, result);
+	}
+	usleep(10 * 1000);
+	MONITOR_RUN = false;
+	CLIENT_RECEIVE_RUN = false;
 	return 0;
 }
 
@@ -278,7 +306,8 @@ int benchmark(string &zhtConf, string &neighborConf) {
 	init_packages(IS_BATCH);
 
 	if (IS_BATCH) {
-		benchmarkBatch();
+		//benchmark_single_batch();
+		benchmark_dynamic_batching();
 
 	} else {
 		benchmarkInsert();

@@ -60,10 +60,6 @@ public:
 
 };
 
-double const TIME_MAX = 9999999999000000;//a reasonably long time in the future.
-extern bool CLIENT_RECEIVE_RUN; //Need to be define in the cpp file.
-extern map<string, string> req_results_map;
-//Tony: request for batch processing end.
 
 typedef struct recv_thread_args {
 
@@ -107,6 +103,7 @@ public:
 	//static int addToBatch(Request item, ZPack &batch); // by GPB
 	static void* client_receiver_thread(void* arg);
 	pthread_t start_receiver_thread(int port);
+
 	//end.
 private:
 	int commonOp(const string &opcode, const string &key, const string &val,
@@ -124,8 +121,6 @@ private:
 	ProtoProxy *_proxy;
 	int _msg_maxsize;
 };
-
-
 
 
 typedef struct monitor_send_thread_args{
@@ -173,23 +168,29 @@ public:
 	//A monitor thread, watch the condition and decide when to send the batch.Running from the beginning. multiple policies applicable.
 
 private:
-	void batch_monitor_thread(void);
+	static void* batch_monitor_thread(void* argu);
 	//Track request status
 	map<string, int> req_stats_map;
 	//map<string, string> req_results_map;
 	//Batch container
 	//list<Request> send_list;
 	ZPack req_batch;	//contains a list of requests
-	vector<Batch> batch_vector;	//hold multiple batches, each for a dest server.
+
 	//pthread_mutex_t mutex_monitor_condition;	// = PTHREAD_MUTEX_INITIALIZER;
 	//pthread_mutex_t mutex_batch_all;	// = PTHREAD_MUTEX_INITIALIZER;
 	//pthread_mutex_t mutex_in_sending;
 	//double batch_deadline;// = TIME_MAX;// batch -wide deadline, a absolute time stamp.
-	bool MONITOR_RUN;	// = false;
+		// = false;
 	int latency_time;// = 500; //in microsec. Batch must go by this much time before deadline. It's left for transferring and svr side processing.
 	monitor_args mon_args;
 };
 
+//Global variables: for threads accessing.
+double const TIME_MAX = 9999999999000000;//a reasonably long time in the future.
+extern bool MONITOR_RUN;
+extern bool CLIENT_RECEIVE_RUN;
+extern vector<Batch> BATCH_VECTOR_GLOBAL;	//Has to be global, since it must be accessed by some threads. It hold multiple batches, each for a dest server.
+//Tony: request for batch processing end.
 
 
 

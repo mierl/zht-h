@@ -52,6 +52,10 @@ using namespace iit::datasys::zht::dm;
 pthread_mutex_t mutex_send_update;
 int MSG_MAXSIZE = 1000 * 1000 * 2;
 
+bool CLIENT_RECEIVE_RUN = false;
+bool MONITOR_RUN = false;
+vector<Batch> BATCH_VECTOR_GLOBAL;
+
 ZHTClient::ZHTClient() :
 		_proxy(0), _msg_maxsize(0) {
 
@@ -418,7 +422,7 @@ int sendTo_BD(int sock, const void* sendbuf, int sendcount) {
 pthread_t ZHTClient::start_receiver_thread(int port) {
 	//recv_args arg;
 	thread_arg.client_listen_port = port;
-
+	CLIENT_RECEIVE_RUN = true;
 	pthread_t th;
 	pthread_create(&th, NULL, ZHTClient::client_receiver_thread,
 			(void*) &thread_arg);
@@ -428,8 +432,8 @@ pthread_t ZHTClient::start_receiver_thread(int port) {
 	return th;
 }
 
-bool CLIENT_RECEIVE_RUN = true; //needed for global variables.
-map<string, string> req_results_map; //needed for global variables.
+//bool CLIENT_RECEIVE_RUN = true; //needed for global variables.
+
 
 void * ZHTClient::client_receiver_thread(void* argum) {
 	//cout << "client thread started."<<endl;
@@ -481,15 +485,19 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 		string result;
 		int recvcount = loopedrecv(connfd, NULL, result);
 
-//		ZPack res;
-//		res.ParseFromString(result);
+		ZPack res;
+		res.ParseFromString(result);
+
+		cout << "Client received a batch, contains " << res.batch_item_size()
+				<< " items" << endl;
+
 //		for (int i = 0; i < res.batch_item_size(); i++) {
 //			BatchItem batch_item = res.batch_item(i);
 //			cout << "item_" << i + 1 << ", key = " << batch_item.key()
 //					<< ", val = " << batch_item.val() << endl;
 //		}
 
-		CLIENT_RECEIVE_RUN = false;
+		//CLIENT_RECEIVE_RUN = false;
 		//How to handle received result?
 	}
 	//close(connfd);
@@ -720,18 +728,17 @@ int Batch::send_batch(ZPack &batch) {
 	return 0;
 }
 
-
 int AggregatedSender::init() {
 	//pthread_mutex_init(&(this->mutex_monitor_condition), NULL);
 	//pthread_mutex_init(&(this->mutex_batch_all), NULL);
 	//pthread_mutex_init(&(this->mutex_in_sending), NULL);
 	//this->batch_deadline = TIME_MAX;// batch -wide deadline, a absolute time stamp.
-	this->MONITOR_RUN = false;
+	MONITOR_RUN = false;
 	this->latency_time = 500;
 
 	Batch init_batch;
 	for (int i = 0; i < ConfHandler::NeighborVector.size(); i++) {
-		this->batch_vector.push_back(init_batch);
+		BATCH_VECTOR_GLOBAL.push_back(init_batch);
 	}
 
 	return 0;
@@ -739,12 +746,12 @@ int AggregatedSender::init() {
 
 pthread_t AggregatedSender::start_batch_monitor_thread(monitor_args args) {
 	//recv_args arg;
-	this->MONITOR_RUN = true;
+	MONITOR_RUN = true;
 	this->mon_args = args;
 
 	pthread_t th;
-	pthread_create(&th, NULL, ZHTClient::client_receiver_thread,
-	NULL);
+	pthread_create(&th, NULL, AggregatedSender::batch_monitor_thread,
+			(void *) NULL);
 
 	//pthread_join(th, NULL);
 	// pthread_create(&id1, NULL, ZHTClient::listeningSocket, (void *)&_param);
@@ -752,7 +759,7 @@ pthread_t AggregatedSender::start_batch_monitor_thread(monitor_args args) {
 }
 
 int AggregatedSender::stop_batch_monitor_thread(void) {
-	this->MONITOR_RUN = false;
+	MONITOR_RUN = false;
 	return 0;
 }
 
@@ -765,35 +772,33 @@ int AggregatedSender::req_handler(Request in_req, string & immediate_result) {
 				% ConfHandler::NeighborVector.size();
 
 		//addToBatch is protected by mutex, so this whole method is safe, don't need another mutex.
-		this->batch_vector.at(svr_index).addToBatch(in_req);
+		BATCH_VECTOR_GLOBAL.at(svr_index).addToBatch(in_req);
 	}
 
 	return 0;
 }
 
-void AggregatedSender::batch_monitor_thread(void) {
-	//monitor_args* param = (monitor_args*)argu;
+void* AggregatedSender::batch_monitor_thread(void* argu) {
+
+	monitor_args* param = (monitor_args*)argu;
 
 	//ZHTClient zc;
-	int policy_index = this->mon_args.policy_index;	//param->policy_index;
-	int num_item = this->mon_args.num_item;
-	unsigned long batch_size = this->mon_args.batch_size;
+	int policy_index = param->policy_index;	//param->policy_index;
+	int num_item = param->num_item;
+	unsigned long batch_size = param->batch_size;
 
 	bool condition = false;
-	while (this->MONITOR_RUN) {
-
-		for (vector<Batch>::iterator it = this->batch_vector.begin();
-				it != this->batch_vector.end(); ++it) {
+	while (MONITOR_RUN) {
+		//Check for all batches and see if any condition is met, send batch if met.
+		for (vector<Batch>::iterator it = BATCH_VECTOR_GLOBAL.begin();
+				it != BATCH_VECTOR_GLOBAL.end(); ++it) {
 
 			condition = (*it).check_condition(policy_index, num_item,
 					batch_size);
 			if (condition) {
-
 				(*it).send_batch(); //Protected by mutex, no need to use in other places in this method.
-
 			}
 		}
-		this->batch_vector;
 	}
 	//return 0;
 }
