@@ -493,7 +493,7 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 	struct sockaddr_in client_addr;
 	socklen_t clilen;
 	int connfd = -1;
-
+	//connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
 	while (CLIENT_RECEIVE_RUN) {
 		cout << "client_receiver_thread: while(CLIENT_RECEIVE_RUN)" << endl;
 		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
@@ -788,7 +788,7 @@ int AggregatedSender::req_handler(Request in_req, string & immediate_result) {
 		//TODO: how to handle immediate return results for direct request?
 
 	} else {
-		cout << "req_handler: regular req, latency != 0" << endl;
+		//cout << "req_handler: regular req, latency != 0" << endl;
 		int svr_index = HashUtil::genHash(in_req.key)
 				% ConfHandler::NeighborVector.size();
 
@@ -810,12 +810,11 @@ void* AggregatedSender::batch_monitor_thread(void* argu) {
 
 	bool condition = false;
 	while (MONITOR_RUN) {
-		cout << "batch_monitor_thread: while(MONITOR_RUN), MONITOR_RUN = "
-				<< MONITOR_RUN << endl;
+		//cout << "batch_monitor_thread: while(MONITOR_RUN), MONITOR_RUN = "<< MONITOR_RUN << endl;
 		//Check for all batches and see if any condition is met, send batch if met.
 		for (vector<Batch>::iterator it = BATCH_VECTOR_GLOBAL.begin();
 				it != BATCH_VECTOR_GLOBAL.end(); ++it) {
-			cout << "batch_monitor_thread: for(vector<Batch>) " << endl;
+			//cout << "batch_monitor_thread: for(vector<Batch>) " << endl;
 
 			condition = (*it).check_condition(policy_index, num_item,
 					batch_size);

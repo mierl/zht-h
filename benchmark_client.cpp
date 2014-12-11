@@ -51,9 +51,9 @@ int numOfOps = -1;
 int keyLen = 10;
 int valLen = 118;
 vector<string> pkgList;
-vector<Request> rand_req_list;
+vector<Request> RAND_REQ_LIST;
 bool IS_BATCH = false;
-bool is_single_batch = true;
+bool is_single_batch = false;
 ZPack batch_pack;
 int client_listen_port = 50009;
 Batch BATCH;
@@ -61,7 +61,7 @@ void init_packages(bool is_batch) {
 
 	srand(time(NULL));
 
-	int max_latency[] = { 1, 5, 10, 50, 100 };
+	int max_latency[] = {1, 5, 10, 50, 100 };//Don't set 0 for now, not implemented yet.
 
 	if (is_batch) {
 		//Batch batch;
@@ -80,9 +80,10 @@ void init_packages(bool is_batch) {
 			req.val = HashUtil::randomString(valLen);
 			if (is_single_batch) { // only send one batch, only one server.
 				BATCH.addToBatch(req);
-				//cout << "Total items added to batch: " << numOfOps << endl;
-			} else {//dynamic batching for multiple servers
-				rand_req_list.push_back(req);
+				//cout << "single batching: req push: " << i << endl;
+			} else { //dynamic batching for multiple servers
+				//cout << "dynamic batching: req push: " <<i<<endl;
+				RAND_REQ_LIST.push_back(req);
 			}
 		}
 
@@ -131,8 +132,8 @@ int benchmarkInsert() {
 
 	char buf[200];
 	sprintf(buf, "Inserted packages, %d, %d, cost(ms), %f", numOfOps - errCount,
-			numOfOps, end - start );
-	cout << "Average latency: " << ((end - start ) / numOfOps)  << "ms." << endl;
+			numOfOps, end - start);
+	cout << "Average latency: " << ((end - start) / numOfOps) << "ms." << endl;
 	cout << buf << endl;
 
 	return 0;
@@ -282,21 +283,25 @@ int benchmark_dynamic_batching(void) {
 	AggregatedSender sender;
 	sender.init();
 	pthread_t th_recv = zc.start_receiver_thread(client_listen_port);
+	sleep(1);
 	monitor_args args;
-	args.batch_size = 100000;
-	args.num_item = 100;
+	args.batch_size = 1000;
+	args.num_item = 10;
 	args.policy_index = 1;
 
-	pthread_t  th_monit = sender.start_batch_monitor_thread(args);
-
+	pthread_t th_monit = sender.start_batch_monitor_thread(args);
+	cout << "start_batch_monitor_thread done, RAND_REQ_LIST.size() = "
+			<< RAND_REQ_LIST.size() << endl;
 	string result;
 	int i = 0;
-	for(vector<Request>::iterator it = rand_req_list.begin(); it != rand_req_list.end(); ++it, i++){
-		cout<<"Req_"<<i<<" "<<endl;
+	for (vector<Request>::iterator it = RAND_REQ_LIST.begin();
+			it != RAND_REQ_LIST.end(); ++it, i++) {
+		//cout << "Req_" << i << ": max_tolerant_latency = "<< (*it).max_tolerant_latency << endl;
+
 		sender.req_handler(*it, result);
 	}
 
-	usleep(10 * 1000);
+	sleep(3);
 
 	MONITOR_RUN = false;
 	CLIENT_RECEIVE_RUN = false;
@@ -320,8 +325,10 @@ int benchmark(string &zhtConf, string &neighborConf) {
 	init_packages(IS_BATCH);
 
 	if (IS_BATCH) {
-		benchmark_single_batch();
-		//benchmark_dynamic_batching();
+		if (is_single_batch) {
+			benchmark_single_batch();
+		} else
+			benchmark_dynamic_batching();
 
 	} else {
 		benchmarkInsert();
@@ -352,7 +359,7 @@ int main(int argc, char **argv) {
 
 	IS_BATCH = false;
 	int c;
-	while ((c = getopt(argc, argv, "z:n:o:h:v:b")) != -1) {
+	while ((c = getopt(argc, argv, "z:n:o:v:b:h")) != -1) {
 		switch (c) {
 		case 'z':
 			zhtConf = string(optarg);
@@ -363,15 +370,21 @@ int main(int argc, char **argv) {
 		case 'o':
 			numOfOps = atoi(optarg);
 			break;
-
-//		case 'k':
-//			keyLen = atoi(optarg);
-//			break;
 		case 'v':
 			valLen = atoi(optarg);
 			break;
-		case 'b':
+		case 'b': {
 			IS_BATCH = true;
+			string batch_type = "";
+			batch_type = string(optarg);
+			if (0 == batch_type.compare("s")) {
+				is_single_batch = true;
+				cout << "Single batching." << endl;
+			} else if (0 == batch_type.compare("d")) {
+				is_single_batch = false;
+				cout << "Dynamic batching." << endl;
+			}
+		}
 			break;
 		case 'h':
 			printHelp = 1;
