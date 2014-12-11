@@ -56,7 +56,7 @@ bool IS_BATCH = false;
 bool is_single_batch = true;
 ZPack batch_pack;
 int client_listen_port = 50009;
-Batch batch;
+Batch BATCH;
 void init_packages(bool is_batch) {
 
 	srand(time(NULL));
@@ -64,8 +64,8 @@ void init_packages(bool is_batch) {
 	int max_latency[] = { 1, 5, 10, 50, 100 };
 
 	if (is_batch) {
-		Batch batch;
-		batch.init();
+		//Batch batch;
+		BATCH.init();
 		string ip = ZHTUtil::getLocalIP();
 		for (int i = 0; i < numOfOps; i++) {
 			Request req;
@@ -79,7 +79,7 @@ void init_packages(bool is_batch) {
 			req.key = HashUtil::randomString(keyLen);
 			req.val = HashUtil::randomString(valLen);
 			if (is_single_batch) { // only send one batch, only one server.
-				batch.addToBatch(req);
+				BATCH.addToBatch(req);
 				//cout << "Total items added to batch: " << numOfOps << endl;
 			} else {//dynamic batching for multiple servers
 				rand_req_list.push_back(req);
@@ -107,6 +107,7 @@ int benchmarkInsert() {
 
 	int c = 0;
 	vector<string>::iterator it;
+	int x = 2;
 	for (it = pkgList.begin(); it != pkgList.end(); it++) {
 
 		c++;
@@ -114,8 +115,12 @@ int benchmarkInsert() {
 		string pkg_str = *it;
 		ZPack pkg;
 		pkg.ParseFromString(pkg_str);
+		//sleep(x);
 
+		double s2 = TimeUtil::getTime_msec();
 		int ret = zc.insert(pkg.key(), pkg.val());
+		double e2 = TimeUtil::getTime_msec();
+		//cout << "Single insert cost: "<<e2 - s2 <<" ms."<<endl;
 		//cout << "insert, val = "<<pkg.val()<<endl;
 		if (ret < 0) {
 			errCount++;
@@ -126,8 +131,8 @@ int benchmarkInsert() {
 
 	char buf[200];
 	sprintf(buf, "Inserted packages, %d, %d, cost(ms), %f", numOfOps - errCount,
-			numOfOps, end - start);
-	cout << "Average latency: " << (end - start) / numOfOps << "ms." << endl;
+			numOfOps, end - start );
+	cout << "Average latency: " << ((end - start ) / numOfOps)  << "ms." << endl;
 	cout << buf << endl;
 
 	return 0;
@@ -262,7 +267,8 @@ int benchmark_single_batch() {
 
 	double start = TimeUtil::getTime_msec();
 	//Batch::send_batch(batch_pack);
-	batch.send_batch();
+	BATCH.send_batch();
+	CLIENT_RECEIVE_RUN = false;
 	pthread_join(th, NULL);
 	double end = TimeUtil::getTime_msec();
 
@@ -275,21 +281,29 @@ int benchmark_single_batch() {
 int benchmark_dynamic_batching(void) {
 	AggregatedSender sender;
 	sender.init();
-
+	pthread_t th_recv = zc.start_receiver_thread(client_listen_port);
 	monitor_args args;
 	args.batch_size = 100000;
 	args.num_item = 100;
 	args.policy_index = 1;
 
-	sender.start_batch_monitor_thread(args);
+	pthread_t  th_monit = sender.start_batch_monitor_thread(args);
 
 	string result;
-	for(vector<Request>::iterator it = rand_req_list.begin(); it != rand_req_list.end(); ++it){
+	int i = 0;
+	for(vector<Request>::iterator it = rand_req_list.begin(); it != rand_req_list.end(); ++it, i++){
+		cout<<"Req_"<<i<<" "<<endl;
 		sender.req_handler(*it, result);
 	}
+
 	usleep(10 * 1000);
+
 	MONITOR_RUN = false;
 	CLIENT_RECEIVE_RUN = false;
+
+	pthread_join(th_recv, NULL);
+	pthread_join(th_monit, NULL);
+
 	return 0;
 }
 
@@ -306,8 +320,8 @@ int benchmark(string &zhtConf, string &neighborConf) {
 	init_packages(IS_BATCH);
 
 	if (IS_BATCH) {
-		//benchmark_single_batch();
-		benchmark_dynamic_batching();
+		benchmark_single_batch();
+		//benchmark_dynamic_batching();
 
 	} else {
 		benchmarkInsert();

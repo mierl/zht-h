@@ -135,11 +135,20 @@ int IPProtoProxy::loopedrecv(int sock, void *senderAddr, string &srecv) {
 		memset(buf, '\0', sizeof(buf));
 
 		ssize_t count;
-		if (senderAddr == NULL)
+		if (senderAddr == NULL) {
+
+			//double s2 = TimeUtil::getTime_msec();
 			count = ::recv(sock, buf, sizeof(buf), 0);
-		else
+			//double e2 = TimeUtil::getTime_msec();
+			//cout << "IPProtoProxy::loopedrecv while(1): recv, sock = "<< sock <<", cost: "<< e2 - s2 << " ms, count = " << count <<endl;
+			//cout << "IPProtoProxy::loopedrecv "<< buf <<", count = " << count <<endl;
+		} else {
+			//double s2 = TimeUtil::getTime_msec();
 			count = ::recvfrom(sock, buf, sizeof(buf), 0,
 					(struct sockaddr *) senderAddr, &addr_len);
+			//double e2 = TimeUtil::getTime_msec();
+			//cout << "IPProtoProxy::loopedrecv while(1): recvFrom cost: "<< e2 - s2 << " ms." << endl;
+		}
 
 		if (count == -1 || count == 0) {
 

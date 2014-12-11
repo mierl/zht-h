@@ -80,23 +80,31 @@ bool TCPProxy::sendrecv(const void *sendbuf, const size_t sendcount,
 	LockGuard lock(sock_mutex);
 
 	/*send message to server over client sock fd*/
+	//double s2 = TimeUtil::getTime_msec();
 	int sentSize = sendTo(sock, sendbuf, sendcount);
+	//double e2 = TimeUtil::getTime_msec();
+	//cout << "Single sendTo cost: " << e2 - s2 << " ms." << endl;
+
 	int sent_bool = sentSize == sendcount;
 
 	/*receive response from server over client sock fd*/
+	//s2 = TimeUtil::getTime_msec();
 	recvcount = recvFrom(sock, recvbuf);
+	//e2 = TimeUtil::getTime_msec();
+	//cout << "Single recvFrom cost: " << e2 - s2 << " ms." << endl;
 	int recv_bool = recvcount >= 0;
 
 	/*combine flags as value to be returned*/
+	//close(sock);
 	return sent_bool && recv_bool;
 }
 
 //Tony added for ZHT-H
 /*
-bool TCPProxy::send_to_dest(const void *sendbuf, string host, int port){
-	return false;
-}
-*/
+ bool TCPProxy::send_to_dest(const void *sendbuf, string host, int port){
+ return false;
+ }
+ */
 
 bool TCPProxy::teardown() {
 
@@ -284,16 +292,19 @@ TCPStub::~TCPStub() {
 bool TCPStub::recvsend(ProtoAddr addr, const void *recvbuf) {
 
 	//get response to be sent to client
+	//double s2 = TimeUtil::getTime_msec();
 	string recvstr((char*) recvbuf);
-
+	//double e2 = TimeUtil::getTime_msec();
+	//cout << " TCPStub::recvsend: recvstr, cost: " << e2 - s2 << " ms." << endl;
 #ifdef SCCB
 	HTWorker htw(addr, this);
 #else
 	HTWorker htw;
 #endif
-
+	//s2 = TimeUtil::getTime_msec();
 	string result = htw.run(recvstr.c_str());
-
+	//e2 = TimeUtil::getTime_msec();
+	//cout << " TCPStub::recvsend: htw.run: cost: " << e2 - s2 << " ms." << endl;
 #ifdef SCCB
 	return true;
 #else
@@ -304,18 +315,24 @@ bool TCPStub::recvsend(ProtoAddr addr, const void *recvbuf) {
 	bool sent_bool;
 	ZPack pack;
 	pack.ParseFromString(result);
-	if(ZPack_Pack_type_BATCH_REQ  == pack.pack_type()){
+	if (ZPack_Pack_type_BATCH_REQ == pack.pack_type()) {
 		TCPProxy tcp;
 		ZHTUtil zu;
-
+		//s2 = TimeUtil::getTime_msec();
 		int sock = tcp.makeClientSocket(pack.client_ip(), pack.client_port());
-
-		int sent = tcp.sendTo(sock, (void*)result.c_str(), result.size());
-
+		//e2 = TimeUtil::getTime_msec();
+		//cout << " TCPStub::recvsend: tcp.makeClientSocket: cost: " << e2 - s2<< " ms." << endl;
+		//s2 = TimeUtil::getTime_msec();
+		int sent = tcp.sendTo(sock, (void*) result.c_str(), result.size());
+		//e2 = TimeUtil::getTime_msec();
+		//cout << " TCPStub::recvsend: tcp.sendTo: cost: " << e2 - s2 << " ms."	<< endl;
 		close(sock);
 
-	}else{
+	} else {
+		//s2 = TimeUtil::getTime_msec();
 		int sentsize = sendBack(addr, sendbuf, sendcount);
+		//e2 = TimeUtil::getTime_msec();
+		//cout << " TCPStub::recvsend: tcp.sendBack: cost: " << e2 - s2 << " ms."<< endl;
 		sent_bool = sentsize == sendcount;
 	}
 

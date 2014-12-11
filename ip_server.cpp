@@ -36,9 +36,10 @@
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include "Util.h"
+#include<iostream>
 using namespace std;
-
+using namespace iit::datasys::zht::dm;
 IPServer::IPServer() :
 		_stub(ProxyStubFactory::createStub()) {
 }
@@ -67,6 +68,9 @@ void IPServer::process(const int& fd, const char * const buf, sockaddr sender) {
 	memcpy(pa.sender, &sender, sizeof(sockaddr));
 
 	string bufstr(buf);
+	//double s2 = TimeUtil::getTime_msec();
 	_stub->recvsend(pa, bufstr.c_str());
+	//double e2 = TimeUtil::getTime_msec();
+	//cout << "IPServer::process: recvsend()  cost: "	<< e2 - s2 << " ms." << endl;
 }
 

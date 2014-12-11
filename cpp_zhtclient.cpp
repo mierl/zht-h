@@ -56,6 +56,56 @@ bool CLIENT_RECEIVE_RUN = false;
 bool MONITOR_RUN = false;
 vector<Batch> BATCH_VECTOR_GLOBAL;
 
+//Duplicated from ip_proxy_stub.cpp
+int loopedrecv(int sock, void *senderAddr, string &srecv) {
+
+	ssize_t recvcount = -2;
+	socklen_t addr_len = sizeof(struct sockaddr);
+
+	BdRecvBase *pbrb = new BdRecvFromServer();
+
+	char buf[Env::BUF_SIZE];
+
+	while (1) {
+
+		memset(buf, '\0', sizeof(buf));
+
+		ssize_t count;
+		if (senderAddr == NULL)
+			count = ::recv(sock, buf, sizeof(buf), 0);
+		else
+			count = ::recvfrom(sock, buf, sizeof(buf), 0,
+					(struct sockaddr *) senderAddr, &addr_len);
+
+		if (count == -1 || count == 0) {
+
+			recvcount = count;
+
+			break;
+		}
+
+		bool ready = false;
+
+		string bd = pbrb->getBdStr(sock, buf, count, ready);
+
+		if (ready) {
+
+			srecv = bd;
+			recvcount = srecv.size();
+
+			break;
+		}
+
+		memset(buf, '\0', sizeof(buf));
+	}
+
+	delete pbrb;
+	pbrb = NULL;
+
+	return recvcount;
+}
+
+
 ZHTClient::ZHTClient() :
 		_proxy(0), _msg_maxsize(0) {
 
@@ -332,74 +382,40 @@ string ZHTClient::commonOpInternal(const string &opcode, const string &key,
 	size_t msz = _msg_maxsize;
 
 	/*send to and receive from*/
-	_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
+	//double s2 = TimeUtil::getTime_msec();
 
+	//Tony: changed commu method for big msg
+	TCPProxy tcp;
+	ZHTUtil zu;
+	HostEntity he = zu.getHostEntityByKey(msg);
+	int sock = tcp.getSockCached(he.host, he.port);
+	tcp.sendTo(sock, (void*) msg.c_str(), msg.size());
+	string res;
+
+	int recvcount = loopedrecv(sock, NULL, res);
+	//_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
+	//Tony: changed commu method for big msg
+
+	//double e2 = TimeUtil::getTime_msec();
+	//cout << " ZHTClient::commonOpInternal: recvsend: _proxy->sendrecv(): cost: "<< e2 - s2 << " ms." << endl;
 	/*...parse status and result*/
 	string sstatus;
 
-	string srecv(buf);
+	//string res(buf);
 
-	if (srecv.empty()) {
+	if (res.empty()) {
 
 		sstatus = Const::ZSC_REC_SRVEXP;
 	} else {
 
-		result = srecv.substr(3); //the left, if any, is lookup result or second-try zpack
-		sstatus = srecv.substr(0, 3); //status returned, the first three chars, like 001, -98...
+		result = res.substr(3); //the left, if any, is lookup result or second-try zpack
+		sstatus = res.substr(0, 3); //status returned, the first three chars, like 001, -98...
 	}
 
 	free(buf);
 	return sstatus;
 }
 
-//Duplicated from ip_proxy_stub.cpp
-int loopedrecv(int sock, void *senderAddr, string &srecv) {
-
-	ssize_t recvcount = -2;
-	socklen_t addr_len = sizeof(struct sockaddr);
-
-	BdRecvBase *pbrb = new BdRecvFromServer();
-
-	char buf[Env::BUF_SIZE];
-
-	while (1) {
-
-		memset(buf, '\0', sizeof(buf));
-
-		ssize_t count;
-		if (senderAddr == NULL)
-			count = ::recv(sock, buf, sizeof(buf), 0);
-		else
-			count = ::recvfrom(sock, buf, sizeof(buf), 0,
-					(struct sockaddr *) senderAddr, &addr_len);
-
-		if (count == -1 || count == 0) {
-
-			recvcount = count;
-
-			break;
-		}
-
-		bool ready = false;
-
-		string bd = pbrb->getBdStr(sock, buf, count, ready);
-
-		if (ready) {
-
-			srecv = bd;
-			recvcount = srecv.size();
-
-			break;
-		}
-
-		memset(buf, '\0', sizeof(buf));
-	}
-
-	delete pbrb;
-	pbrb = NULL;
-
-	return recvcount;
-}
 
 int sendTo_BD(int sock, const void* sendbuf, int sendcount) {
 
@@ -433,7 +449,6 @@ pthread_t ZHTClient::start_receiver_thread(int port) {
 }
 
 //bool CLIENT_RECEIVE_RUN = true; //needed for global variables.
-
 
 void * ZHTClient::client_receiver_thread(void* argum) {
 	//cout << "client thread started."<<endl;
@@ -480,7 +495,7 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 	int connfd = -1;
 
 	while (CLIENT_RECEIVE_RUN) {
-
+		cout << "client_receiver_thread: while(CLIENT_RECEIVE_RUN)" << endl;
 		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
 		string result;
 		int recvcount = loopedrecv(connfd, NULL, result);
@@ -557,7 +572,7 @@ bool Batch::check_condition(int policy_index, int num_item,
 		break;
 	default:
 		condition = false;
-		cout << "Invalid policy index." << endl;
+		cout << "Invalid policy index, index = " << policy_index << endl;
 		break;
 	}
 	return condition;
@@ -747,11 +762,14 @@ int AggregatedSender::init() {
 pthread_t AggregatedSender::start_batch_monitor_thread(monitor_args args) {
 	//recv_args arg;
 	MONITOR_RUN = true;
-	this->mon_args = args;
+
+	mon_args.batch_size = args.batch_size;
+	mon_args.num_item = args.num_item;
+	mon_args.policy_index = args.policy_index;
 
 	pthread_t th;
 	pthread_create(&th, NULL, AggregatedSender::batch_monitor_thread,
-			(void *) NULL);
+			(void *) &mon_args);
 
 	//pthread_join(th, NULL);
 	// pthread_create(&id1, NULL, ZHTClient::listeningSocket, (void *)&_param);
@@ -764,10 +782,13 @@ int AggregatedSender::stop_batch_monitor_thread(void) {
 }
 
 int AggregatedSender::req_handler(Request in_req, string & immediate_result) {
+
 	if (0 == in_req.max_tolerant_latency) {
+		cout << "req_handler: max_tolerant_latency = 0" << endl;
 		//TODO: how to handle immediate return results for direct request?
 
 	} else {
+		cout << "req_handler: regular req, latency != 0" << endl;
 		int svr_index = HashUtil::genHash(in_req.key)
 				% ConfHandler::NeighborVector.size();
 
@@ -780,7 +801,7 @@ int AggregatedSender::req_handler(Request in_req, string & immediate_result) {
 
 void* AggregatedSender::batch_monitor_thread(void* argu) {
 
-	monitor_args* param = (monitor_args*)argu;
+	monitor_args* param = (monitor_args*) argu;
 
 	//ZHTClient zc;
 	int policy_index = param->policy_index;	//param->policy_index;
@@ -789,17 +810,24 @@ void* AggregatedSender::batch_monitor_thread(void* argu) {
 
 	bool condition = false;
 	while (MONITOR_RUN) {
+		cout << "batch_monitor_thread: while(MONITOR_RUN), MONITOR_RUN = "
+				<< MONITOR_RUN << endl;
 		//Check for all batches and see if any condition is met, send batch if met.
 		for (vector<Batch>::iterator it = BATCH_VECTOR_GLOBAL.begin();
 				it != BATCH_VECTOR_GLOBAL.end(); ++it) {
+			cout << "batch_monitor_thread: for(vector<Batch>) " << endl;
 
 			condition = (*it).check_condition(policy_index, num_item,
 					batch_size);
 			if (condition) {
+				cout << "batch_monitor_thread: condition match, sending... "
+						<< endl;
 				(*it).send_batch(); //Protected by mutex, no need to use in other places in this method.
 			}
 		}
 	}
+	cout << "batch_monitor_thread: end while, MONITOR_RUN = " << MONITOR_RUN
+			<< endl;
 	//return 0;
 }
 

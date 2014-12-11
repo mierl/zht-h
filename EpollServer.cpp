@@ -43,7 +43,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <queue>
-
+#include"Util.h"
 using namespace std;
 
 namespace iit {
@@ -481,8 +481,10 @@ void EpollServer::serve() {
 								_eventQueue.push(eventData);
 
 #else
+
 								_ZProcessor->process(edata->fd(), bd.c_str(),
 										fromaddr);
+
 #endif
 							}
 #endif
@@ -524,6 +526,7 @@ void EpollServer::serve() {
 					int done = 0;
 
 					while (1) {
+						double s2 = TimeUtil::getTime_msec();
 						//usleep(1);//fix cross nodes issues: only for ec2 vms, physical machined don't neet this.
 						char buf[Env::BUF_SIZE];
 						memset(buf, 0, sizeof(buf));
@@ -558,6 +561,7 @@ void EpollServer::serve() {
 						} else {
 
 #ifdef BIG_MSG
+							double s2 = TimeUtil::getTime_msec();
 							bool ready = false;
 							string bd = pbrb->getBdStr(sfd, buf, count, ready);
 
@@ -568,10 +572,13 @@ void EpollServer::serve() {
 										*edata->sender());
 								_eventQueue.push(eventData);
 #else
+
 								_ZProcessor->process(edata->fd(), bd.c_str(),
 										*edata->sender());
+
 #endif
 							}
+
 #endif
 
 #ifdef SML_MSG
@@ -589,6 +596,8 @@ void EpollServer::serve() {
 
 						//memset(buf, 0, sizeof(buf));
 						//free(buf);
+						double e2 = TimeUtil::getTime_msec();
+						//cout << " EpollServer::serve(): while(1) ----------   cost: "<< e2 - s2 << " ms." << endl;
 					}
 
 					if (done) {
