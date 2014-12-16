@@ -61,7 +61,7 @@ void init_packages(bool is_batch) {
 
 	srand(time(NULL));
 
-	int max_latency[] = {1, 5, 10, 50, 100 };//Don't set 0 for now, not implemented yet.
+	int max_latency[] = {10, 50, 100, 500, 1000 };//Don't set 0 for now, not implemented yet.
 
 	if (is_batch) {
 		//Batch batch;
@@ -285,9 +285,9 @@ int benchmark_dynamic_batching(void) {
 	pthread_t th_recv = zc.start_receiver_thread(client_listen_port);
 	sleep(1);
 	monitor_args args;
-	args.batch_size = 1000;
-	args.num_item = 10;
-	args.policy_index = 1;
+	args.batch_size = 20000;
+	args.num_item =100;
+	args.policy_index = 5;
 
 	pthread_t th_monit = sender.start_batch_monitor_thread(args);
 	cout << "start_batch_monitor_thread done, RAND_REQ_LIST.size() = "
@@ -297,7 +297,7 @@ int benchmark_dynamic_batching(void) {
 	for (vector<Request>::iterator it = RAND_REQ_LIST.begin();
 			it != RAND_REQ_LIST.end(); ++it, i++) {
 		//cout << "Req_" << i << ": max_tolerant_latency = "<< (*it).max_tolerant_latency << endl;
-
+		//usleep(1);
 		sender.req_handler(*it, result);
 	}
 

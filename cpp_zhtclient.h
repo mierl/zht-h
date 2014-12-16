@@ -60,7 +60,6 @@ public:
 
 };
 
-
 typedef struct recv_thread_args {
 
 	int client_listen_port;
@@ -116,29 +115,27 @@ private:
 	recv_args thread_arg;
 	//map<string, string> req_ret_status_map;
 
-
 private:
 	ProtoProxy *_proxy;
 	int _msg_maxsize;
 };
 
-
-typedef struct monitor_send_thread_args{
+typedef struct monitor_send_thread_args {
 
 	int policy_index;
 	int num_item;
 	unsigned long batch_size;
 
-}monitor_args;
+} monitor_args;
 
-class Batch{
+class Batch {
 public:
 	Batch();
 	int init(void);
-	bool check_condition(int policy_index, int num_item, unsigned long batch_size);
+	bool check_condition(int policy_index, int num_item,
+			unsigned long batch_size);
 	bool check_condition_deadline(void);
-	bool check_condition_deadline_num_item(int max_item);
-	bool check_condition_deadline_batch_size_byte(unsigned long max_size);
+
 	//A series of methods, test the condition by different policy
 	int clear_batch(void);
 	int addToBatch(Request item);
@@ -146,15 +143,22 @@ public:
 	int send_batch(void);
 	int makeBatch(list<Request> src);
 	static int send_batch(ZPack &batch);
+	double batch_deadline;
 	unsigned int batch_num_item;
 	unsigned long batch_size_byte;
 	int latency_time;
+	pthread_mutex_t mutex_batch_local;
 private:
 	ZPack req_batch;
-	ZPack req_batch_swap;
-	bool in_sending;
-	double batch_deadline;
-	pthread_mutex_t mutex_batch_local;
+	//ZPack req_batch_swap;
+	//bool in_sending;
+	//double batch_deadline;
+	//pthread_mutex_t mutex_batch_local;
+	bool check_condition_num_item(int max_item);
+	bool check_condition_deadline_num_item(int max_item);
+	bool check_condition_deadline_batch_size_byte(unsigned long max_size);
+	bool check_condition_num_item_batch_size_byte(int max_item,
+			unsigned long max_size_byte);
 
 };
 
@@ -180,7 +184,7 @@ private:
 	//pthread_mutex_t mutex_batch_all;	// = PTHREAD_MUTEX_INITIALIZER;
 	//pthread_mutex_t mutex_in_sending;
 	//double batch_deadline;// = TIME_MAX;// batch -wide deadline, a absolute time stamp.
-		// = false;
+	// = false;
 	int latency_time;// = 500; //in microsec. Batch must go by this much time before deadline. It's left for transferring and svr side processing.
 	monitor_args mon_args;
 };
@@ -189,10 +193,7 @@ private:
 double const TIME_MAX = 9999999999000000;//a reasonably long time in the future.
 extern bool MONITOR_RUN;
 extern bool CLIENT_RECEIVE_RUN;
-extern vector<Batch> BATCH_VECTOR_GLOBAL;	//Has to be global, since it must be accessed by some threads. It hold multiple batches, each for a dest server.
+extern vector<Batch> BATCH_VECTOR_GLOBAL;//Has to be global, since it must be accessed by some threads. It hold multiple batches, each for a dest server.
 //Tony: request for batch processing end.
-
-
-
 
 #endif /* ZHTCLIENT_H_ */
