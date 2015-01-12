@@ -301,9 +301,12 @@ int benchmark_dynamic_batching(void) {
 		sender.req_handler(*it, result);
 	}
 
-	sleep(3);
+	sleep(2);
 
 	MONITOR_RUN = false;
+
+	sleep(3);
+
 	CLIENT_RECEIVE_RUN = false;
 
 	pthread_join(th_recv, NULL);
@@ -423,5 +426,5 @@ int main(int argc, char **argv) {
 void printUsage(char *argv_0) {
 
 	fprintf(stdout, "Usage:\n%s %s\n", argv_0,
-			"-z zht.conf -n neighbor.conf -o number_of_operations -v length_value [-b (batching)] [-h(help)] ");
+			"-z zht.conf -n neighbor.conf -o number_of_operations -v length_value [-b (batching) s(single batch)/d(dynamic)] [-h(help)] ");
 }

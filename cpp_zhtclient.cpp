@@ -47,6 +47,8 @@
 #include "tcp_proxy_stub.h"
 #include "ZHTUtil.h"
 #include <unistd.h>
+
+//include <gsl/gsl_fit.h> //For linear regression
 using namespace iit::datasys::zht::dm;
 
 pthread_mutex_t mutex_send_update;
@@ -534,6 +536,29 @@ int ZHTClient::teardown() {
 		return -1;
 }
 
+// test all servers and
+int ZHTClient::batcherVectorInit(){
+	//TODO: simple imp: assume all server network connections work the same way: only test one server and apply param to all servers
+
+
+	//TODO: complete imp: do this for all servers.
+
+	return 0;
+}
+
+double ZHTClient::expcTransLatency(void){
+
+//	this->trans_factor; //Calculated by linear regression, transferring latency = a*size+b
+//	this-> trans_const;
+//	this->batch_size_byte;
+//	this->batch_size_record;
+//
+//	return this->trans_factor * this->batch_size_byte + this-> trans_const;
+
+	return 0;
+}
+
+
 //This function accumulate requests and send in batch when a condition is satisfied
 //It use a hash map track status of active requests
 //This method is called from a client service loop, which keep receiving requests.
@@ -762,6 +787,9 @@ int Batch::send_batch(ZPack &batch) {
 	//cout << "cpp_zhtclient.cpp: ZHTClient::send_batch():  " << buf << endl;
 	return 0;
 }
+
+//Use GSL linear regression to calculate expected
+
 
 int AggregatedSender::init() {
 	//pthread_mutex_init(&(this->mutex_monitor_condition), NULL);

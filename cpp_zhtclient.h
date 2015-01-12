@@ -103,6 +103,8 @@ public:
 	static void* client_receiver_thread(void* arg);
 	pthread_t start_receiver_thread(int port);
 
+	int batcherVectorInit();// do a testing run, and setup parameters for batch vector
+
 	//end.
 private:
 	int commonOp(const string &opcode, const string &key, const string &val,
@@ -114,6 +116,9 @@ private:
 	//Tony: ZHT-H addtion
 	recv_args thread_arg;
 	//map<string, string> req_ret_status_map;
+
+	//TODO:
+	double expcTransLatency(void);//Expected transferring latency
 
 private:
 	ProtoProxy *_proxy;
@@ -142,12 +147,21 @@ public:
 	int addToSwapBatch(Request item);
 	int send_batch(void);
 	int makeBatch(list<Request> src);
+
 	static int send_batch(ZPack &batch);
 	double batch_deadline;
 	unsigned int batch_num_item;
 	unsigned long batch_size_byte;
 	int latency_time;
 	pthread_mutex_t mutex_batch_local;
+
+	list<double> batch_latency_record;
+	list<long> batch_size_record;
+	double trans_factor; //Calculated by linear regression, transferring latency = a*size+b
+	double trans_const;
+
+
+
 private:
 	ZPack req_batch;
 	//ZPack req_batch_swap;
