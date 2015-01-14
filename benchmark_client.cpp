@@ -57,6 +57,9 @@ bool is_single_batch = false;
 ZPack batch_pack;
 int client_listen_port = 50009;
 Batch BATCH;
+
+monitor_args dynamicBatch_monitor_args;
+
 void init_packages(bool is_batch) {
 
 	srand(time(NULL));
@@ -284,12 +287,12 @@ int benchmark_dynamic_batching(void) {
 	sender.init();
 	pthread_t th_recv = zc.start_receiver_thread(client_listen_port);
 	sleep(1);
-	monitor_args args;
-	args.batch_size = 20000;
+	
+	/*args.batch_size = 20000;
 	args.num_item =100;
-	args.policy_index = 5;
+	args.policy_index = 5;*/
 
-	pthread_t th_monit = sender.start_batch_monitor_thread(args);
+	pthread_t th_monit = sender.start_batch_monitor_thread(dynamicBatch_monitor_args);
 	cout << "start_batch_monitor_thread done, RAND_REQ_LIST.size() = "
 			<< RAND_REQ_LIST.size() << endl;
 	string result;
@@ -360,9 +363,13 @@ int main(int argc, char **argv) {
 	string zhtConf = "";
 	string neighborConf = "";
 
+	dynamicBatch_monitor_args.batch_size = -1;
+	dynamicBatch_monitor_args.num_item = -1;
+	dynamicBatch_monitor_args.policy_index = -1;
+
 	IS_BATCH = false;
 	int c;
-	while ((c = getopt(argc, argv, "z:n:o:v:b:h")) != -1) {
+	while ((c = getopt(argc, argv, "z:n:o:v:b:s:i:p:h")) != -1) {
 		switch (c) {
 		case 'z':
 			zhtConf = string(optarg);
@@ -389,6 +396,18 @@ int main(int argc, char **argv) {
 			}
 		}
 			break;
+		case 's':
+			dynamicBatch_monitor_args.batch_size = atoi(optarg);
+			cout <<"Dynamic batch size: " << dynamicBatch_monitor_args.batch_size << endl;
+			break;
+		case 'i':
+			dynamicBatch_monitor_args.num_item = atoi(optarg);
+			cout << "Dynamic batch number of items: " << dynamicBatch_monitor_args.num_item << endl;
+			break;
+		case 'p':
+			dynamicBatch_monitor_args.policy_index = atoi(optarg);
+			cout << "Dynamic batch policy: " << dynamicBatch_monitor_args.policy_index << endl;
+			break;
 		case 'h':
 			printHelp = 1;
 			break;
@@ -397,6 +416,21 @@ int main(int argc, char **argv) {
 			printUsage(argv[0]);
 			exit(1);
 		}
+	}
+
+	/*Check that all required params for dynamic batch are provided*/
+	if(IS_BATCH && !is_single_batch){
+		if(dynamicBatch_monitor_args.batch_size == -1 ||
+				dynamicBatch_monitor_args.num_item == -1 ||
+				dynamicBatch_monitor_args.policy_index == -1){
+			cout << "Invalid arguments for Dynamic batching, usage: " << endl;
+			cout << "-s: Batch Size" << endl;
+			cout << "-i: Number of items" << endl;
+			cout << "-p: Policy Index" << endl;
+
+			return 0;
+		}
+
 	}
 
 	int helpPrinted = 0;
