@@ -305,6 +305,7 @@ bool TCPStub::recvsend(ProtoAddr addr, const void *recvbuf) {
 	string result = htw.run(recvstr.c_str());
 	//e2 = TimeUtil::getTime_msec();
 	//cout << " TCPStub::recvsend: htw.run: cost: " << e2 - s2 << " ms." << endl;
+	//cout << " TCPStub::recvsend: htw.run() done "<<endl;
 #ifdef SCCB
 	return true;
 #else
@@ -313,22 +314,30 @@ bool TCPStub::recvsend(ProtoAddr addr, const void *recvbuf) {
 
 	//send response to client over server sock fd
 	bool sent_bool;
+
+	//cout << " TCPStub::recvsend: pack.ParseFromString(result) start"<<endl;
 	ZPack pack;
-	pack.ParseFromString(result);
+	pack.ParseFromString(result);//Tony: changed from result, proto buf problem pron.
+	cout << " TCPStub::recvsend: pack.batch_start_time() done, pack.pack_type() = "<< pack.batch_start_time()<<endl;
+	cout << "TCPStub::recvsend: result.size() = " << sendcount << ", c_str size = "<< strlen(result.c_str())<<endl;
 	if (ZPack_Pack_type_BATCH_REQ == pack.pack_type()) {
 		TCPProxy tcp;
 		ZHTUtil zu;
 		//s2 = TimeUtil::getTime_msec();
+		//cout << " TCPStub::recvsend: tcp.makeClientSocket(): start "<<endl;
 		int sock = tcp.makeClientSocket(pack.client_ip(), pack.client_port());
 		//e2 = TimeUtil::getTime_msec();
-		//cout << " TCPStub::recvsend: tcp.makeClientSocket: cost: " << e2 - s2<< " ms." << endl;
+		//cout << " TCPStub::recvsend: tcp.makeClientSocket(): done, start tcp.sendTo...  "<<endl;//cost: " << e2 - s2<< " ms." << endl;
 		//s2 = TimeUtil::getTime_msec();
 		int sent = tcp.sendTo(sock, (void*) result.c_str(), result.size());
+		cout << "sent = "<<sent<<endl;
 		//e2 = TimeUtil::getTime_msec();
 		//cout << " TCPStub::recvsend: tcp.sendTo: cost: " << e2 - s2 << " ms."	<< endl;
-		close(sock);
+		//cout << " TCPStub::recvsend: tcp.makeClientSocket(): done, tcp.sendTo done "<<endl;
+		//close(sock);
 
 	} else {
+		//cout << " TCPStub::recvsend: run into single mode... "<<endl;
 		//s2 = TimeUtil::getTime_msec();
 		int sentsize = sendBack(addr, sendbuf, sendcount);
 		//e2 = TimeUtil::getTime_msec();

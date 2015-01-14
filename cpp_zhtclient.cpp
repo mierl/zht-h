@@ -57,6 +57,8 @@ int MSG_MAXSIZE = 1000 * 1000 * 2;
 bool CLIENT_RECEIVE_RUN = false;
 bool MONITOR_RUN = false;
 vector<Batch> BATCH_VECTOR_GLOBAL;
+list<latency_rec> LATENCY_LOG;
+bool RECORDING_LATENCY = true;
 
 //Duplicated from ip_proxy_stub.cpp
 int loopedrecv(int sock, void *senderAddr, string &srecv) {
@@ -106,7 +108,6 @@ int loopedrecv(int sock, void *senderAddr, string &srecv) {
 
 	return recvcount;
 }
-
 
 ZHTClient::ZHTClient() :
 		_proxy(0), _msg_maxsize(0) {
@@ -385,7 +386,6 @@ string ZHTClient::commonOpInternal(const string &opcode, const string &key,
 
 	/*send to and receive from*/
 	//double s2 = TimeUtil::getTime_msec();
-
 	//Tony: changed commu method for big msg
 	TCPProxy tcp;
 	ZHTUtil zu;
@@ -417,7 +417,6 @@ string ZHTClient::commonOpInternal(const string &opcode, const string &key,
 	free(buf);
 	return sstatus;
 }
-
 
 int sendTo_BD(int sock, const void* sendbuf, int sendcount) {
 
@@ -495,18 +494,36 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 	struct sockaddr_in client_addr;
 	socklen_t clilen;
 	int connfd = -1;
+	int i = 0;
 	//connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
 	while (CLIENT_RECEIVE_RUN) {
-		cout << "client_receiver_thread: while(CLIENT_RECEIVE_RUN)" << endl;
+		//cout << "client_receiver_thread: while(), accept..." << endl;
 		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
 		string result;
+		//cout<<"before loopedrecv..."<<endl;
 		int recvcount = loopedrecv(connfd, NULL, result);
-
+		//cout<<"after loopedrecv..."<<endl;
 		ZPack res;
 		res.ParseFromString(result);
 
-		cout << "Client received a batch, contains " << res.batch_item_size()
-				<< " items" << endl;
+		if (true == RECORDING_LATENCY) {
+			double batch_arr_time = TimeUtil::getTime_msec();
+			cout.precision(17);
+			cout<< ++i <<"th batch, started at "<< res.batch_start_time() << ", actual latency: " <<batch_arr_time - res.batch_start_time()<<endl;
+//			for (int i = 0; i < res.batch_item_size(); i++) { //recording latency for analysis
+//				BatchItem batch_item = res.batch_item(i);
+////							cout << "item_" << i + 1 << ", key = " << batch_item.key()
+////									<< ", val = " << batch_item.val() << endl;
+//				latency_record rec;
+//				rec.qos_latency = batch_item.qos_latency();
+//				rec.actual_latency = batch_arr_time - batch_item.submit_time();
+//				//cout<< "submit_time: " << batch_item.submit_time()<<endl;
+//				LATENCY_LOG.push_back(rec);
+//			}
+		}
+
+//		cout << "Client received a batch, contains " << res.batch_item_size()
+//				<< " items" << endl;
 
 //		for (int i = 0; i < res.batch_item_size(); i++) {
 //			BatchItem batch_item = res.batch_item(i);
@@ -537,16 +554,15 @@ int ZHTClient::teardown() {
 }
 
 // test all servers and
-int ZHTClient::batcherVectorInit(){
+int ZHTClient::batcherVectorInit() {
 	//TODO: simple imp: assume all server network connections work the same way: only test one server and apply param to all servers
-
 
 	//TODO: complete imp: do this for all servers.
 
 	return 0;
 }
 
-double ZHTClient::expcTransLatency(void){
+double ZHTClient::expcTransLatency(void) {
 
 //	this->trans_factor; //Calculated by linear regression, transferring latency = a*size+b
 //	this-> trans_const;
@@ -557,7 +573,6 @@ double ZHTClient::expcTransLatency(void){
 
 	return 0;
 }
-
 
 //This function accumulate requests and send in batch when a condition is satisfied
 //It use a hash map track status of active requests
@@ -576,7 +591,8 @@ int Batch::init(void) {
 	this->batch_deadline = TIME_MAX;
 	this->batch_num_item = 0;
 	this->batch_size_byte = 0;
-	this->latency_time = 500; // in microseconds
+	this->latency_time = 2; // in ms
+	this->batch_start_time =0;
 	//this->in_sending = false;
 
 	return 0;
@@ -593,10 +609,12 @@ bool Batch::check_condition(int policy_index, int max_num_item,
 		condition = this->check_condition_deadline_num_item(max_num_item);
 		break;
 	case 3:
-		condition = this->check_condition_deadline_batch_size_byte(max_batch_size);
+		condition = this->check_condition_deadline_batch_size_byte(
+				max_batch_size);
 		break;
 	case 4:
-		condition = this->check_condition_num_item_batch_size_byte(max_num_item, max_batch_size);
+		condition = this->check_condition_num_item_batch_size_byte(max_num_item,
+				max_batch_size);
 		break;
 	case 5:
 		condition = this->check_condition_num_item(max_num_item);
@@ -610,19 +628,19 @@ bool Batch::check_condition(int policy_index, int max_num_item,
 }
 
 bool Batch::check_condition_deadline(void) {
-	cout.precision(23);
+	//cout.precision(23);
 	//cout << "Deadline check: batch_deadline: " << this->batch_deadline/1000<<endl;
 	//cout << "Deadline check: now: "<<TimeUtil::getTime_msec()<<endl;
 
-	//cout << "Deadline check: Time left: " << (this->batch_deadline/1000 - TimeUtil::getTime_msec())<< ", this->latency_time: " << this->latency_time <<endl;
-	return (this->batch_deadline - TimeUtil::getTime_usec()
+	//cout << "Deadline check: Time left: " << (this->batch_deadline - TimeUtil::getTime_msec())<< ", this->latency_time: " << this->latency_time <<endl;
+	return (this->batch_deadline - TimeUtil::getTime_msec()
 			<= this->latency_time);
 
 }
 
 bool Batch::check_condition_deadline_num_item(int max_item) {
 	//if(this->batch_num_item > 0)
-		//cout<<" this->batch_num_item = "<< this->batch_num_item<<endl;
+	//cout<<" this->batch_num_item = "<< this->batch_num_item<<endl;
 	return (this->check_condition_deadline() || this->batch_num_item >= max_item);
 
 }
@@ -634,16 +652,24 @@ bool Batch::check_condition_deadline_batch_size_byte(unsigned long max_size) {
 
 }
 
-bool Batch::check_condition_num_item_batch_size_byte(int max_item, unsigned long max_size_byte){
-	return (this->batch_num_item >= max_item || this->batch_size_byte >= max_size_byte);
+bool Batch::check_condition_num_item_batch_size_byte(int max_item,
+		unsigned long max_size_byte) {
+	return (this->batch_num_item >= max_item
+			|| this->batch_size_byte >= max_size_byte);
 }
 
-bool Batch::check_condition_num_item(int max_item){
-	return(this->batch_num_item >= max_item);
+bool Batch::check_condition_num_item(int max_item) {
+	return (this->batch_num_item >= max_item);
 }
 int Batch::addToBatch(Request item) { //protected by local mutex
 
-	item.arrival_time = TimeUtil::getTime_usec();
+	item.submit_time = TimeUtil::getTime_msec();
+
+	if (0 == this->batch_start_time) { //1st item, means the start of a batching.
+		//cout << "1st item, batch starts at" << item.submit_time << endl;
+		this->batch_start_time = item.submit_time;
+		this->req_batch.set_batch_start_time(item.submit_time);
+	}
 
 	pthread_mutex_lock(&this->mutex_batch_local);
 
@@ -653,12 +679,12 @@ int Batch::addToBatch(Request item) { //protected by local mutex
 	newItem->set_client_ip(item.client_ip);
 	newItem->set_client_port(item.client_port);
 	newItem->set_opcode(item.opcode);
-	newItem->set_max_wait_time(item.max_tolerant_latency);
+	newItem->set_qos_latency(item.qos_latency);
 	newItem->set_consistency(item.consistency);
 
+	newItem->set_submit_time(item.submit_time);
 	//Used to update batch deadline.
-	double in_req_deadline = item.arrival_time
-			+ item.max_tolerant_latency * 1000; //max_tolerant_latency is in ms
+	double in_req_deadline = item.submit_time + item.qos_latency; // * 1000; //max_tolerant_latency is in ms
 
 	//cout <<"in_req_deadline: "<< in_req_deadline<<endl;
 	//cout <<"this->batch_deadline: "<<this->batch_deadline<<endl;
@@ -742,6 +768,8 @@ int Batch::send_batch(void) {	//protected by local mutex
 
 	ZPack temp;
 	temp.ParseFromString(msg.c_str());
+	//cout << "sending batch, start time = " << temp.batch_start_time() << endl;
+
 
 	/*send to and receive from*/
 	//_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
@@ -751,7 +779,7 @@ int Batch::send_batch(void) {	//protected by local mutex
 	HostEntity he = zu.getHostEntityByKey(msg);
 	int sock = tcp.getSockCached(he.host, he.port);
 	tcp.sendTo(sock, (void*) msg.c_str(), msg.size());
-
+	//usleep(1000);
 	this->clear_batch();
 
 	//pthread_mutex_unlock(&this->mutex_batch_local);
@@ -790,14 +818,13 @@ int Batch::send_batch(ZPack &batch) {
 
 //Use GSL linear regression to calculate expected
 
-
 int AggregatedSender::init() {
 	//pthread_mutex_init(&(this->mutex_monitor_condition), NULL);
 	//pthread_mutex_init(&(this->mutex_batch_all), NULL);
 	//pthread_mutex_init(&(this->mutex_in_sending), NULL);
 	//this->batch_deadline = TIME_MAX;// batch -wide deadline, a absolute time stamp.
 	MONITOR_RUN = false;
-	this->latency_time = 500;
+	this->latency_time = 1; //T-base, in ms.
 
 	Batch init_batch;
 	for (int i = 0; i < ConfHandler::NeighborVector.size(); i++) {
@@ -831,8 +858,8 @@ int AggregatedSender::stop_batch_monitor_thread(void) {
 
 int AggregatedSender::req_handler(Request in_req, string & immediate_result) {
 	//cout.precision(20);
-	usleep(1);//to fix the gap of mutex coverage
-	if (0 == in_req.max_tolerant_latency) {
+	usleep(1);	//to fix the gap of mutex coverage
+	if (0 == in_req.qos_latency) {
 		cout << "req_handler: max_tolerant_latency = 0" << endl;
 		//TODO: how to handle immediate return results for direct request?
 
@@ -871,10 +898,10 @@ void* AggregatedSender::batch_monitor_thread(void* argu) {
 					batch_size);
 
 			if (condition) {
-				cout << "batch_monitor_thread: condition match, sending... batch_deadline  = "
-						<< (*it).batch_deadline << ", batch_num_item = " << (*it).batch_num_item
-						<< ", batch_size_byte = "<<(*it).batch_size_byte
-						<< endl;
+//				cout << "batch_monitor_thread: condition match, sending... batch_deadline  = "
+//						<< (*it).batch_deadline << ", batch_num_item = " << (*it).batch_num_item
+//						<< ", batch_size_byte = "<<(*it).batch_size_byte
+//						<< endl;
 				(*it).send_batch(); //Protected by mutex, no need to use in other places in this method.
 			}
 

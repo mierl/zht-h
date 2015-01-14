@@ -125,27 +125,63 @@ string HTWorker::run(const char *buf) {
 		result = Const::ZSC_REC_UOPC;
 	}
 	}
+	//cout<<"HTWorker::run() before return"<<endl;
 	return result;
 }
 
+//ZPack HTWorker::run(const char *buf) {
+//
+//	ZPack zpack;
+//	string buff(buf);
+//	zpack.ParseFromString(buff);
+//
+//
+//	result = process_batch(zpack);
+//
+//	string result;
+//
+//	if(ZPack_Pack_type_BATCH_REQ  == zpack.pack_type()){//batch
+////		cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
+////		cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
+////		cout <<"zpack.key: "<< zpack.key() <<endl;
+////		cout <<"zpack.batch_item(i).val: "<<zpack.batch_item(0).val() << endl<< endl;
+////
+////		cout << "printing batch items received... " << endl;
+////		for(int i =0; i < zpack.batch_item_size(); i++){
+////			BatchItem b = zpack.batch_item(i);
+////			cout <<"batch item recieved key: " << b.key() << endl;
+////			cout << "batch item received value: " << b.val() << endl;
+////		}
+////
+////		result = Const::ZSC_REC_UOPC; // "OK";
+//
+//	}else if(ZPack_Pack_type_SINGLE == zpack.pack_type()){}
+//	cout<<"HTWorker::run() before return"<<endl;
+//	return result;
+//}
+
+
 string HTWorker::process_batch(const ZPack &zpack){
 //	cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
-	cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
+	//cout << "Batch contains "<< zpack.batch_item_size() << " items, started at "<< zpack.batch_start_time()<<endl;
 //	cout << "iterating over batch items and processing... " << endl;
 
 	ZPack response_pack;
 	response_pack.set_pack_type(ZPack_Pack_type_BATCH_REQ);
-
+	response_pack.set_batch_start_time(zpack.batch_start_time());
 	int count = 0;
 	for(int i =0; i < zpack.batch_item_size(); i++){
 		BatchItem batch_item = zpack.batch_item(i);
+		//cout.precision(17);
+		//cout << batch_item.submit_time()<<endl;
+
 		ZPack batch_item_zpack;
 		batch_item_zpack.set_key(batch_item.key());
 		batch_item_zpack.set_val(batch_item.val());
 		batch_item_zpack.set_opcode(batch_item.opcode());
 		batch_item_zpack.set_client_ip(batch_item.client_ip());
 		batch_item_zpack.set_client_port(batch_item.client_port());
-		batch_item_zpack.set_max_wait_time(batch_item.max_wait_time());
+		batch_item_zpack.set_qos_latency(batch_item.qos_latency());
 		//batch_item_zpack.set_consistency(batch_item.consistency());
 		string result = "";
 
@@ -177,13 +213,17 @@ string HTWorker::process_batch(const ZPack &zpack){
 			newItem->set_client_ip(batch_item.client_ip());
 			newItem->set_client_port(batch_item.client_port());
 			newItem->set_opcode(batch_item.opcode());
-			newItem->set_max_wait_time(batch_item.max_wait_time());
+			newItem->set_qos_latency(batch_item.qos_latency());
 			newItem->set_consistency(batch_item.consistency());
+
+			newItem->set_submit_time(batch_item.submit_time());
 	}
 
 	//cout << "Each item in batch processed, sending back result packet" << endl;
 	response_pack.set_client_ip(response_pack.batch_item(0).client_ip());
 	response_pack.set_client_port(response_pack.batch_item(0).client_port());
+
+
 	string msg = response_pack.SerializeAsString();
 	char *buf = (char*) calloc(_msg_maxsize, sizeof(char));
 	size_t msz = _msg_maxsize;
@@ -192,7 +232,8 @@ string HTWorker::process_batch(const ZPack &zpack){
 	_stub->sendBack(_addr, msg.c_str(), msz);
 	return "";
 #else
-	return msg.c_str();
+	//cout << "HTWorker::process_batch() return..." << endl;
+	return msg; //.c_str();
 #endif
 }
 

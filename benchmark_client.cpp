@@ -27,7 +27,7 @@
  *      Author: Tony
  *      Contributor: Xiaobingo, KWang, DZhao
  */
-#include <string>
+
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -43,6 +43,10 @@
 #include "cpp_zhtclient.h"
 #include "ZHTUtil.h"
 
+#include <fstream>
+#include <sstream>
+#include <string>
+
 using namespace std;
 using namespace iit::datasys::zht::dm;
 
@@ -57,11 +61,12 @@ bool is_single_batch = false;
 ZPack batch_pack;
 int client_listen_port = 50009;
 Batch BATCH;
+
 void init_packages(bool is_batch) {
 
 	srand(time(NULL));
 
-	int max_latency[] = {10, 50, 100, 500, 1000 };//Don't set 0 for now, not implemented yet.
+	int max_latency[] = {50, 100, 500, 1000 };//Don't set 0 for now, not implemented yet.
 
 	if (is_batch) {
 		//Batch batch;
@@ -74,7 +79,7 @@ void init_packages(bool is_batch) {
 			req.client_port = client_listen_port;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
 
-			req.max_tolerant_latency = max_latency[rand() % 5]; //randomly set max_latency, but
+			req.qos_latency = max_latency[rand() % 4]; //randomly set max_latency, but
 
 			req.key = HashUtil::randomString(keyLen);
 			req.val = HashUtil::randomString(valLen);
@@ -279,6 +284,27 @@ int benchmark_single_batch() {
 	return 0;
 }
 
+
+
+
+int writeLogToFile(string path, list<latency_rec> log){
+
+	ofstream outFile;
+	outFile.open (path.c_str(), std::ofstream::out | std::ofstream::app);
+
+	list<latency_rec>::iterator it;
+	for (it = LATENCY_LOG.begin(); it != LATENCY_LOG.end(); it++) {
+		std::stringstream s;
+		s <<  (*it).qos_latency << " " << (*it).actual_latency;
+
+		outFile << s.str() << endl;
+		//std::to_string((*it).qos_latency) << " " << std::to_string((*it).qos_latency);
+	}
+
+	outFile.close();
+	return 0;
+}
+
 int benchmark_dynamic_batching(void) {
 	AggregatedSender sender;
 	sender.init();
@@ -287,30 +313,45 @@ int benchmark_dynamic_batching(void) {
 	monitor_args args;
 	args.batch_size = 20000;
 	args.num_item =100;
-	args.policy_index = 5;
+	args.policy_index = 1;
 
 	pthread_t th_monit = sender.start_batch_monitor_thread(args);
-	cout << "start_batch_monitor_thread done, RAND_REQ_LIST.size() = "
-			<< RAND_REQ_LIST.size() << endl;
+	cout << "start_batch_monitor_thread done, "
+			<<"RAND_REQ_LIST.size() = "<< RAND_REQ_LIST.size()
+			<<", num_item = "<< args.num_item
+			<<", batch_size = " << args.batch_size
+			<<", policy_index = "<<args.policy_index << endl << endl;
 	string result;
 	int i = 0;
+
+	double start = TimeUtil::getTime_msec();
 	for (vector<Request>::iterator it = RAND_REQ_LIST.begin();
 			it != RAND_REQ_LIST.end(); ++it, i++) {
 		//cout << "Req_" << i << ": max_tolerant_latency = "<< (*it).max_tolerant_latency << endl;
 		//usleep(1);
 		sender.req_handler(*it, result);
 	}
+	double end = TimeUtil::getTime_msec();
+	cout <<"Finished "<< numOfOps <<" requests in "<< end - start
+			<< "ms, client throughput = " << 1000 * numOfOps/(end - start)
+			<< " ops/s, avg latency = "<< (end - start)/numOfOps << " ms."<<endl<<endl;
+//	cout.precision(25);
+//	cout << start<<endl;
+//	cout << end<<endl;
 
 	sleep(2);
-
-	MONITOR_RUN = false;
-
-	sleep(3);
-
-	CLIENT_RECEIVE_RUN = false;
-
-	pthread_join(th_recv, NULL);
+	//MONITOR_RUN = false;
 	pthread_join(th_monit, NULL);
+
+	sleep(2);
+	//CLIENT_RECEIVE_RUN = false;
+	cout<<"Cancel receiver thread now..."<<endl;
+	//pthread_cancel(th_recv);
+	pthread_join(th_recv, NULL);//wait... won't run into here because it still wait at accept()
+	if(true == RECORDING_LATENCY){//write latency log to a file.
+		string logPath = "log";
+		writeLogToFile(logPath, LATENCY_LOG);
+	}
 
 	return 0;
 }

@@ -54,9 +54,9 @@ inline bool ZPack_Consistency_level_Parse(
     ZPack_Consistency_level_descriptor(), name, value);
 }
 enum ZPack_Pack_type {
-  ZPack_Pack_type_SINGLE = 0,
-  ZPack_Pack_type_BATCH_REQ = 1,
-  ZPack_Pack_type_BATCH_RET = 2
+  ZPack_Pack_type_SINGLE = 1,
+  ZPack_Pack_type_BATCH_REQ = 2,
+  ZPack_Pack_type_BATCH_RET = 3
 };
 bool ZPack_Pack_type_IsValid(int value);
 const ZPack_Pack_type ZPack_Pack_type_Pack_type_MIN = ZPack_Pack_type_SINGLE;
@@ -74,9 +74,9 @@ inline bool ZPack_Pack_type_Parse(
     ZPack_Pack_type_descriptor(), name, value);
 }
 enum BatchItem_Consistency_level {
-  BatchItem_Consistency_level_STRONG = 0,
-  BatchItem_Consistency_level_WEAK = 1,
-  BatchItem_Consistency_level_EVENTUAL = 2
+  BatchItem_Consistency_level_STRONG = 1,
+  BatchItem_Consistency_level_WEAK = 2,
+  BatchItem_Consistency_level_EVENTUAL = 3
 };
 bool BatchItem_Consistency_level_IsValid(int value);
 const BatchItem_Consistency_level BatchItem_Consistency_level_Consistency_level_MIN = BatchItem_Consistency_level_STRONG;
@@ -300,12 +300,12 @@ class ZPack : public ::google::protobuf::Message {
   inline ::google::protobuf::int64 seq_num() const;
   inline void set_seq_num(::google::protobuf::int64 value);
   
-  // optional int32 max_wait_time = 12;
-  inline bool has_max_wait_time() const;
-  inline void clear_max_wait_time();
-  static const int kMaxWaitTimeFieldNumber = 12;
-  inline ::google::protobuf::int32 max_wait_time() const;
-  inline void set_max_wait_time(::google::protobuf::int32 value);
+  // optional int32 qos_latency = 12;
+  inline bool has_qos_latency() const;
+  inline void clear_qos_latency();
+  static const int kQosLatencyFieldNumber = 12;
+  inline ::google::protobuf::int32 qos_latency() const;
+  inline void set_qos_latency(::google::protobuf::int32 value);
   
   // optional .ZPack.Consistency_level consistency = 13;
   inline bool has_consistency() const;
@@ -314,17 +314,31 @@ class ZPack : public ::google::protobuf::Message {
   inline ::ZPack_Consistency_level consistency() const;
   inline void set_consistency(::ZPack_Consistency_level value);
   
-  // optional .ZPack.Pack_type pack_type = 14 [default = SINGLE];
+  // optional double batch_response_time = 14;
+  inline bool has_batch_response_time() const;
+  inline void clear_batch_response_time();
+  static const int kBatchResponseTimeFieldNumber = 14;
+  inline double batch_response_time() const;
+  inline void set_batch_response_time(double value);
+  
+  // optional double batch_start_time = 15;
+  inline bool has_batch_start_time() const;
+  inline void clear_batch_start_time();
+  static const int kBatchStartTimeFieldNumber = 15;
+  inline double batch_start_time() const;
+  inline void set_batch_start_time(double value);
+  
+  // optional .ZPack.Pack_type pack_type = 16 [default = SINGLE];
   inline bool has_pack_type() const;
   inline void clear_pack_type();
-  static const int kPackTypeFieldNumber = 14;
+  static const int kPackTypeFieldNumber = 16;
   inline ::ZPack_Pack_type pack_type() const;
   inline void set_pack_type(::ZPack_Pack_type value);
   
-  // repeated .BatchItem batch_item = 15;
+  // repeated .BatchItem batch_item = 17;
   inline int batch_item_size() const;
   inline void clear_batch_item();
-  static const int kBatchItemFieldNumber = 15;
+  static const int kBatchItemFieldNumber = 17;
   inline const ::BatchItem& batch_item(int index) const;
   inline ::BatchItem* mutable_batch_item(int index);
   inline ::BatchItem* add_batch_item();
@@ -357,10 +371,14 @@ class ZPack : public ::google::protobuf::Message {
   inline void clear_has_client_port();
   inline void set_has_seq_num();
   inline void clear_has_seq_num();
-  inline void set_has_max_wait_time();
-  inline void clear_has_max_wait_time();
+  inline void set_has_qos_latency();
+  inline void clear_has_qos_latency();
   inline void set_has_consistency();
   inline void clear_has_consistency();
+  inline void set_has_batch_response_time();
+  inline void clear_has_batch_response_time();
+  inline void set_has_batch_start_time();
+  inline void clear_has_batch_start_time();
   inline void set_has_pack_type();
   inline void clear_has_pack_type();
   
@@ -377,13 +395,15 @@ class ZPack : public ::google::protobuf::Message {
   ::std::string* client_ip_;
   ::google::protobuf::int64 seq_num_;
   ::google::protobuf::int32 client_port_;
-  ::google::protobuf::int32 max_wait_time_;
+  ::google::protobuf::int32 qos_latency_;
+  double batch_response_time_;
   int consistency_;
   int pack_type_;
+  double batch_start_time_;
   ::google::protobuf::RepeatedPtrField< ::BatchItem > batch_item_;
   
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(15 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(17 + 31) / 32];
   
   friend void  protobuf_AddDesc_zpack_2eproto();
   friend void protobuf_AssignDesc_zpack_2eproto();
@@ -531,12 +551,12 @@ class BatchItem : public ::google::protobuf::Message {
   inline ::std::string* mutable_val();
   inline ::std::string* release_val();
   
-  // optional int32 max_wait_time = 7;
-  inline bool has_max_wait_time() const;
-  inline void clear_max_wait_time();
-  static const int kMaxWaitTimeFieldNumber = 7;
-  inline ::google::protobuf::int32 max_wait_time() const;
-  inline void set_max_wait_time(::google::protobuf::int32 value);
+  // optional int32 qos_latency = 7;
+  inline bool has_qos_latency() const;
+  inline void clear_qos_latency();
+  static const int kQosLatencyFieldNumber = 7;
+  inline ::google::protobuf::int32 qos_latency() const;
+  inline void set_qos_latency(::google::protobuf::int32 value);
   
   // optional .BatchItem.Consistency_level consistency = 8;
   inline bool has_consistency() const;
@@ -544,6 +564,20 @@ class BatchItem : public ::google::protobuf::Message {
   static const int kConsistencyFieldNumber = 8;
   inline ::BatchItem_Consistency_level consistency() const;
   inline void set_consistency(::BatchItem_Consistency_level value);
+  
+  // optional double submit_time = 9;
+  inline bool has_submit_time() const;
+  inline void clear_submit_time();
+  static const int kSubmitTimeFieldNumber = 9;
+  inline double submit_time() const;
+  inline void set_submit_time(double value);
+  
+  // optional double respon_time = 10;
+  inline bool has_respon_time() const;
+  inline void clear_respon_time();
+  static const int kResponTimeFieldNumber = 10;
+  inline double respon_time() const;
+  inline void set_respon_time(double value);
   
   // @@protoc_insertion_point(class_scope:BatchItem)
  private:
@@ -559,10 +593,14 @@ class BatchItem : public ::google::protobuf::Message {
   inline void clear_has_key();
   inline void set_has_val();
   inline void clear_has_val();
-  inline void set_has_max_wait_time();
-  inline void clear_has_max_wait_time();
+  inline void set_has_qos_latency();
+  inline void clear_has_qos_latency();
   inline void set_has_consistency();
   inline void clear_has_consistency();
+  inline void set_has_submit_time();
+  inline void clear_has_submit_time();
+  inline void set_has_respon_time();
+  inline void clear_has_respon_time();
   
   ::google::protobuf::UnknownFieldSet _unknown_fields_;
   
@@ -570,13 +608,15 @@ class BatchItem : public ::google::protobuf::Message {
   ::google::protobuf::int64 seq_num_;
   ::std::string* opcode_;
   ::google::protobuf::int32 client_port_;
-  ::google::protobuf::int32 max_wait_time_;
+  ::google::protobuf::int32 qos_latency_;
   ::std::string* key_;
   ::std::string* val_;
+  double submit_time_;
+  double respon_time_;
   int consistency_;
   
   mutable int _cached_size_;
-  ::google::protobuf::uint32 _has_bits_[(8 + 31) / 32];
+  ::google::protobuf::uint32 _has_bits_[(10 + 31) / 32];
   
   friend void  protobuf_AddDesc_zpack_2eproto();
   friend void protobuf_AssignDesc_zpack_2eproto();
@@ -1050,26 +1090,26 @@ inline void ZPack::set_seq_num(::google::protobuf::int64 value) {
   seq_num_ = value;
 }
 
-// optional int32 max_wait_time = 12;
-inline bool ZPack::has_max_wait_time() const {
+// optional int32 qos_latency = 12;
+inline bool ZPack::has_qos_latency() const {
   return (_has_bits_[0] & 0x00000800u) != 0;
 }
-inline void ZPack::set_has_max_wait_time() {
+inline void ZPack::set_has_qos_latency() {
   _has_bits_[0] |= 0x00000800u;
 }
-inline void ZPack::clear_has_max_wait_time() {
+inline void ZPack::clear_has_qos_latency() {
   _has_bits_[0] &= ~0x00000800u;
 }
-inline void ZPack::clear_max_wait_time() {
-  max_wait_time_ = 0;
-  clear_has_max_wait_time();
+inline void ZPack::clear_qos_latency() {
+  qos_latency_ = 0;
+  clear_has_qos_latency();
 }
-inline ::google::protobuf::int32 ZPack::max_wait_time() const {
-  return max_wait_time_;
+inline ::google::protobuf::int32 ZPack::qos_latency() const {
+  return qos_latency_;
 }
-inline void ZPack::set_max_wait_time(::google::protobuf::int32 value) {
-  set_has_max_wait_time();
-  max_wait_time_ = value;
+inline void ZPack::set_qos_latency(::google::protobuf::int32 value) {
+  set_has_qos_latency();
+  qos_latency_ = value;
 }
 
 // optional .ZPack.Consistency_level consistency = 13;
@@ -1095,18 +1135,62 @@ inline void ZPack::set_consistency(::ZPack_Consistency_level value) {
   consistency_ = value;
 }
 
-// optional .ZPack.Pack_type pack_type = 14 [default = SINGLE];
-inline bool ZPack::has_pack_type() const {
+// optional double batch_response_time = 14;
+inline bool ZPack::has_batch_response_time() const {
   return (_has_bits_[0] & 0x00002000u) != 0;
 }
-inline void ZPack::set_has_pack_type() {
+inline void ZPack::set_has_batch_response_time() {
   _has_bits_[0] |= 0x00002000u;
 }
-inline void ZPack::clear_has_pack_type() {
+inline void ZPack::clear_has_batch_response_time() {
   _has_bits_[0] &= ~0x00002000u;
 }
+inline void ZPack::clear_batch_response_time() {
+  batch_response_time_ = 0;
+  clear_has_batch_response_time();
+}
+inline double ZPack::batch_response_time() const {
+  return batch_response_time_;
+}
+inline void ZPack::set_batch_response_time(double value) {
+  set_has_batch_response_time();
+  batch_response_time_ = value;
+}
+
+// optional double batch_start_time = 15;
+inline bool ZPack::has_batch_start_time() const {
+  return (_has_bits_[0] & 0x00004000u) != 0;
+}
+inline void ZPack::set_has_batch_start_time() {
+  _has_bits_[0] |= 0x00004000u;
+}
+inline void ZPack::clear_has_batch_start_time() {
+  _has_bits_[0] &= ~0x00004000u;
+}
+inline void ZPack::clear_batch_start_time() {
+  batch_start_time_ = 0;
+  clear_has_batch_start_time();
+}
+inline double ZPack::batch_start_time() const {
+  return batch_start_time_;
+}
+inline void ZPack::set_batch_start_time(double value) {
+  set_has_batch_start_time();
+  batch_start_time_ = value;
+}
+
+// optional .ZPack.Pack_type pack_type = 16 [default = SINGLE];
+inline bool ZPack::has_pack_type() const {
+  return (_has_bits_[0] & 0x00008000u) != 0;
+}
+inline void ZPack::set_has_pack_type() {
+  _has_bits_[0] |= 0x00008000u;
+}
+inline void ZPack::clear_has_pack_type() {
+  _has_bits_[0] &= ~0x00008000u;
+}
 inline void ZPack::clear_pack_type() {
-  pack_type_ = 0;
+  pack_type_ = 1;
   clear_has_pack_type();
 }
 inline ::ZPack_Pack_type ZPack::pack_type() const {
@@ -1118,7 +1202,7 @@ inline void ZPack::set_pack_type(::ZPack_Pack_type value) {
   pack_type_ = value;
 }
 
-// repeated .BatchItem batch_item = 15;
+// repeated .BatchItem batch_item = 17;
 inline int ZPack::batch_item_size() const {
   return batch_item_.size();
 }
@@ -1423,26 +1507,26 @@ inline ::std::string* BatchItem::release_val() {
   }
 }
 
-// optional int32 max_wait_time = 7;
-inline bool BatchItem::has_max_wait_time() const {
+// optional int32 qos_latency = 7;
+inline bool BatchItem::has_qos_latency() const {
   return (_has_bits_[0] & 0x00000040u) != 0;
 }
-inline void BatchItem::set_has_max_wait_time() {
+inline void BatchItem::set_has_qos_latency() {
   _has_bits_[0] |= 0x00000040u;
 }
-inline void BatchItem::clear_has_max_wait_time() {
+inline void BatchItem::clear_has_qos_latency() {
   _has_bits_[0] &= ~0x00000040u;
 }
-inline void BatchItem::clear_max_wait_time() {
-  max_wait_time_ = 0;
-  clear_has_max_wait_time();
+inline void BatchItem::clear_qos_latency() {
+  qos_latency_ = 0;
+  clear_has_qos_latency();
 }
-inline ::google::protobuf::int32 BatchItem::max_wait_time() const {
-  return max_wait_time_;
+inline ::google::protobuf::int32 BatchItem::qos_latency() const {
+  return qos_latency_;
 }
-inline void BatchItem::set_max_wait_time(::google::protobuf::int32 value) {
-  set_has_max_wait_time();
-  max_wait_time_ = value;
+inline void BatchItem::set_qos_latency(::google::protobuf::int32 value) {
+  set_has_qos_latency();
+  qos_latency_ = value;
 }
 
 // optional .BatchItem.Consistency_level consistency = 8;
@@ -1456,7 +1540,7 @@ inline void BatchItem::clear_has_consistency() {
   _has_bits_[0] &= ~0x00000080u;
 }
 inline void BatchItem::clear_consistency() {
-  consistency_ = 0;
+  consistency_ = 1;
   clear_has_consistency();
 }
 inline ::BatchItem_Consistency_level BatchItem::consistency() const {
@@ -1466,6 +1550,50 @@ inline void BatchItem::set_consistency(::BatchItem_Consistency_level value) {
   GOOGLE_DCHECK(::BatchItem_Consistency_level_IsValid(value));
   set_has_consistency();
   consistency_ = value;
+}
+
+// optional double submit_time = 9;
+inline bool BatchItem::has_submit_time() const {
+  return (_has_bits_[0] & 0x00000100u) != 0;
+}
+inline void BatchItem::set_has_submit_time() {
+  _has_bits_[0] |= 0x00000100u;
+}
+inline void BatchItem::clear_has_submit_time() {
+  _has_bits_[0] &= ~0x00000100u;
+}
+inline void BatchItem::clear_submit_time() {
+  submit_time_ = 0;
+  clear_has_submit_time();
+}
+inline double BatchItem::submit_time() const {
+  return submit_time_;
+}
+inline void BatchItem::set_submit_time(double value) {
+  set_has_submit_time();
+  submit_time_ = value;
+}
+
+// optional double respon_time = 10;
+inline bool BatchItem::has_respon_time() const {
+  return (_has_bits_[0] & 0x00000200u) != 0;
+}
+inline void BatchItem::set_has_respon_time() {
+  _has_bits_[0] |= 0x00000200u;
+}
+inline void BatchItem::clear_has_respon_time() {
+  _has_bits_[0] &= ~0x00000200u;
+}
+inline void BatchItem::clear_respon_time() {
+  respon_time_ = 0;
+  clear_has_respon_time();
+}
+inline double BatchItem::respon_time() const {
+  return respon_time_;
+}
+inline void BatchItem::set_respon_time(double value) {
+  set_has_respon_time();
+  respon_time_ = value;
 }
 
 

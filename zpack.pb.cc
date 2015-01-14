@@ -35,7 +35,7 @@ void protobuf_AssignDesc_zpack_2eproto() {
       "zpack.proto");
   GOOGLE_CHECK(file != NULL);
   ZPack_descriptor_ = file->message_type(0);
-  static const int ZPack_offsets_[15] = {
+  static const int ZPack_offsets_[17] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, opcode_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, key_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, val_),
@@ -47,8 +47,10 @@ void protobuf_AssignDesc_zpack_2eproto() {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, client_ip_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, client_port_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, seq_num_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, max_wait_time_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, qos_latency_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, consistency_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, batch_response_time_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, batch_start_time_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, pack_type_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ZPack, batch_item_),
   };
@@ -66,15 +68,17 @@ void protobuf_AssignDesc_zpack_2eproto() {
   ZPack_Consistency_level_descriptor_ = ZPack_descriptor_->enum_type(0);
   ZPack_Pack_type_descriptor_ = ZPack_descriptor_->enum_type(1);
   BatchItem_descriptor_ = file->message_type(1);
-  static const int BatchItem_offsets_[8] = {
+  static const int BatchItem_offsets_[10] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BatchItem, client_ip_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BatchItem, client_port_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BatchItem, seq_num_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BatchItem, opcode_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BatchItem, key_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BatchItem, val_),
-    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BatchItem, max_wait_time_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BatchItem, qos_latency_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BatchItem, consistency_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BatchItem, submit_time_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(BatchItem, respon_time_),
   };
   BatchItem_reflection_ =
     new ::google::protobuf::internal::GeneratedMessageReflection(
@@ -122,24 +126,27 @@ void protobuf_AddDesc_zpack_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\013zpack.proto\"\305\003\n\005ZPack\022\016\n\006opcode\030\001 \001(\014\022"
+    "\n\013zpack.proto\"\372\003\n\005ZPack\022\016\n\006opcode\030\001 \001(\014\022"
     "\013\n\003key\030\002 \001(\014\022\013\n\003val\030\003 \001(\014\022\016\n\006newval\030\004 \001("
     "\014\022\r\n\005lease\030\005 \001(\014\022\017\n\007valnull\030\006 \001(\010\022\022\n\nnew"
     "valnull\030\007 \001(\010\022\022\n\nreplicanum\030\010 \001(\005\022\021\n\tcli"
     "ent_ip\030\t \001(\014\022\023\n\013client_port\030\n \001(\005\022\017\n\007seq"
-    "_num\030\013 \001(\003\022\025\n\rmax_wait_time\030\014 \001(\005\022-\n\013con"
-    "sistency\030\r \001(\0162\030.ZPack.Consistency_level"
-    "\022+\n\tpack_type\030\016 \001(\0162\020.ZPack.Pack_type:\006S"
-    "INGLE\022\036\n\nbatch_item\030\017 \003(\0132\n.BatchItem\"7\n"
-    "\021Consistency_level\022\n\n\006STRONG\020\000\022\010\n\004WEAK\020\001"
-    "\022\014\n\010EVENTUAL\020\002\"5\n\tPack_type\022\n\n\006SINGLE\020\000\022"
-    "\r\n\tBATCH_REQ\020\001\022\r\n\tBATCH_RET\020\002\"\361\001\n\tBatchI"
-    "tem\022\021\n\tclient_ip\030\001 \001(\014\022\023\n\013client_port\030\002 "
-    "\001(\005\022\017\n\007seq_num\030\003 \001(\003\022\016\n\006opcode\030\004 \001(\014\022\013\n\003"
-    "key\030\005 \001(\014\022\013\n\003val\030\006 \001(\014\022\025\n\rmax_wait_time\030"
-    "\007 \001(\005\0221\n\013consistency\030\010 \001(\0162\034.BatchItem.C"
-    "onsistency_level\"7\n\021Consistency_level\022\n\n"
-    "\006STRONG\020\000\022\010\n\004WEAK\020\001\022\014\n\010EVENTUAL\020\002", 713);
+    "_num\030\013 \001(\003\022\023\n\013qos_latency\030\014 \001(\005\022-\n\013consi"
+    "stency\030\r \001(\0162\030.ZPack.Consistency_level\022\033"
+    "\n\023batch_response_time\030\016 \001(\001\022\030\n\020batch_sta"
+    "rt_time\030\017 \001(\001\022+\n\tpack_type\030\020 \001(\0162\020.ZPack"
+    ".Pack_type:\006SINGLE\022\036\n\nbatch_item\030\021 \003(\0132\n"
+    ".BatchItem\"7\n\021Consistency_level\022\n\n\006STRON"
+    "G\020\000\022\010\n\004WEAK\020\001\022\014\n\010EVENTUAL\020\002\"5\n\tPack_type"
+    "\022\n\n\006SINGLE\020\001\022\r\n\tBATCH_REQ\020\002\022\r\n\tBATCH_RET"
+    "\020\003\"\231\002\n\tBatchItem\022\021\n\tclient_ip\030\001 \001(\014\022\023\n\013c"
+    "lient_port\030\002 \001(\005\022\017\n\007seq_num\030\003 \001(\003\022\016\n\006opc"
+    "ode\030\004 \001(\014\022\013\n\003key\030\005 \001(\014\022\013\n\003val\030\006 \001(\014\022\023\n\013q"
+    "os_latency\030\007 \001(\005\0221\n\013consistency\030\010 \001(\0162\034."
+    "BatchItem.Consistency_level\022\023\n\013submit_ti"
+    "me\030\t \001(\001\022\023\n\013respon_time\030\n \001(\001\"7\n\021Consist"
+    "ency_level\022\n\n\006STRONG\020\001\022\010\n\004WEAK\020\002\022\014\n\010EVEN"
+    "TUAL\020\003", 806);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "zpack.proto", &protobuf_RegisterTypes);
   ZPack::default_instance_ = new ZPack();
@@ -188,9 +195,9 @@ const ::google::protobuf::EnumDescriptor* ZPack_Pack_type_descriptor() {
 }
 bool ZPack_Pack_type_IsValid(int value) {
   switch(value) {
-    case 0:
     case 1:
     case 2:
+    case 3:
       return true;
     default:
       return false;
@@ -217,8 +224,10 @@ const int ZPack::kReplicanumFieldNumber;
 const int ZPack::kClientIpFieldNumber;
 const int ZPack::kClientPortFieldNumber;
 const int ZPack::kSeqNumFieldNumber;
-const int ZPack::kMaxWaitTimeFieldNumber;
+const int ZPack::kQosLatencyFieldNumber;
 const int ZPack::kConsistencyFieldNumber;
+const int ZPack::kBatchResponseTimeFieldNumber;
+const int ZPack::kBatchStartTimeFieldNumber;
 const int ZPack::kPackTypeFieldNumber;
 const int ZPack::kBatchItemFieldNumber;
 #endif  // !_MSC_VER
@@ -250,9 +259,11 @@ void ZPack::SharedCtor() {
   client_ip_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   client_port_ = 0;
   seq_num_ = GOOGLE_LONGLONG(0);
-  max_wait_time_ = 0;
+  qos_latency_ = 0;
   consistency_ = 0;
-  pack_type_ = 0;
+  batch_response_time_ = 0;
+  batch_start_time_ = 0;
+  pack_type_ = 1;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -342,9 +353,11 @@ void ZPack::Clear() {
     }
     client_port_ = 0;
     seq_num_ = GOOGLE_LONGLONG(0);
-    max_wait_time_ = 0;
+    qos_latency_ = 0;
     consistency_ = 0;
-    pack_type_ = 0;
+    batch_response_time_ = 0;
+    batch_start_time_ = 0;
+    pack_type_ = 1;
   }
   batch_item_.Clear();
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
@@ -516,19 +529,19 @@ bool ZPack::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(96)) goto parse_max_wait_time;
+        if (input->ExpectTag(96)) goto parse_qos_latency;
         break;
       }
       
-      // optional int32 max_wait_time = 12;
+      // optional int32 qos_latency = 12;
       case 12: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
-         parse_max_wait_time:
+         parse_qos_latency:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                 input, &max_wait_time_)));
-          set_has_max_wait_time();
+                 input, &qos_latency_)));
+          set_has_qos_latency();
         } else {
           goto handle_uninterpreted;
         }
@@ -553,12 +566,44 @@ bool ZPack::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(112)) goto parse_pack_type;
+        if (input->ExpectTag(113)) goto parse_batch_response_time;
         break;
       }
       
-      // optional .ZPack.Pack_type pack_type = 14 [default = SINGLE];
+      // optional double batch_response_time = 14;
       case 14: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_batch_response_time:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &batch_response_time_)));
+          set_has_batch_response_time();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(121)) goto parse_batch_start_time;
+        break;
+      }
+      
+      // optional double batch_start_time = 15;
+      case 15: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_batch_start_time:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &batch_start_time_)));
+          set_has_batch_start_time();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(128)) goto parse_pack_type;
+        break;
+      }
+      
+      // optional .ZPack.Pack_type pack_type = 16 [default = SINGLE];
+      case 16: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
          parse_pack_type:
@@ -569,17 +614,17 @@ bool ZPack::MergePartialFromCodedStream(
           if (::ZPack_Pack_type_IsValid(value)) {
             set_pack_type(static_cast< ::ZPack_Pack_type >(value));
           } else {
-            mutable_unknown_fields()->AddVarint(14, value);
+            mutable_unknown_fields()->AddVarint(16, value);
           }
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(122)) goto parse_batch_item;
+        if (input->ExpectTag(138)) goto parse_batch_item;
         break;
       }
       
-      // repeated .BatchItem batch_item = 15;
-      case 15: {
+      // repeated .BatchItem batch_item = 17;
+      case 17: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_LENGTH_DELIMITED) {
          parse_batch_item:
@@ -588,7 +633,7 @@ bool ZPack::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(122)) goto parse_batch_item;
+        if (input->ExpectTag(138)) goto parse_batch_item;
         if (input->ExpectAtEnd()) return true;
         break;
       }
@@ -672,9 +717,9 @@ void ZPack::SerializeWithCachedSizes(
     ::google::protobuf::internal::WireFormatLite::WriteInt64(11, this->seq_num(), output);
   }
   
-  // optional int32 max_wait_time = 12;
-  if (has_max_wait_time()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(12, this->max_wait_time(), output);
+  // optional int32 qos_latency = 12;
+  if (has_qos_latency()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(12, this->qos_latency(), output);
   }
   
   // optional .ZPack.Consistency_level consistency = 13;
@@ -683,16 +728,26 @@ void ZPack::SerializeWithCachedSizes(
       13, this->consistency(), output);
   }
   
-  // optional .ZPack.Pack_type pack_type = 14 [default = SINGLE];
-  if (has_pack_type()) {
-    ::google::protobuf::internal::WireFormatLite::WriteEnum(
-      14, this->pack_type(), output);
+  // optional double batch_response_time = 14;
+  if (has_batch_response_time()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(14, this->batch_response_time(), output);
   }
   
-  // repeated .BatchItem batch_item = 15;
+  // optional double batch_start_time = 15;
+  if (has_batch_start_time()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(15, this->batch_start_time(), output);
+  }
+  
+  // optional .ZPack.Pack_type pack_type = 16 [default = SINGLE];
+  if (has_pack_type()) {
+    ::google::protobuf::internal::WireFormatLite::WriteEnum(
+      16, this->pack_type(), output);
+  }
+  
+  // repeated .BatchItem batch_item = 17;
   for (int i = 0; i < this->batch_item_size(); i++) {
     ::google::protobuf::internal::WireFormatLite::WriteMessageMaybeToArray(
-      15, this->batch_item(i), output);
+      17, this->batch_item(i), output);
   }
   
   if (!unknown_fields().empty()) {
@@ -770,9 +825,9 @@ void ZPack::SerializeWithCachedSizes(
     target = ::google::protobuf::internal::WireFormatLite::WriteInt64ToArray(11, this->seq_num(), target);
   }
   
-  // optional int32 max_wait_time = 12;
-  if (has_max_wait_time()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(12, this->max_wait_time(), target);
+  // optional int32 qos_latency = 12;
+  if (has_qos_latency()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(12, this->qos_latency(), target);
   }
   
   // optional .ZPack.Consistency_level consistency = 13;
@@ -781,17 +836,27 @@ void ZPack::SerializeWithCachedSizes(
       13, this->consistency(), target);
   }
   
-  // optional .ZPack.Pack_type pack_type = 14 [default = SINGLE];
-  if (has_pack_type()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
-      14, this->pack_type(), target);
+  // optional double batch_response_time = 14;
+  if (has_batch_response_time()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(14, this->batch_response_time(), target);
   }
   
-  // repeated .BatchItem batch_item = 15;
+  // optional double batch_start_time = 15;
+  if (has_batch_start_time()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(15, this->batch_start_time(), target);
+  }
+  
+  // optional .ZPack.Pack_type pack_type = 16 [default = SINGLE];
+  if (has_pack_type()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
+      16, this->pack_type(), target);
+  }
+  
+  // repeated .BatchItem batch_item = 17;
   for (int i = 0; i < this->batch_item_size(); i++) {
     target = ::google::protobuf::internal::WireFormatLite::
       WriteMessageNoVirtualToArray(
-        15, this->batch_item(i), target);
+        17, this->batch_item(i), target);
   }
   
   if (!unknown_fields().empty()) {
@@ -880,11 +945,11 @@ int ZPack::ByteSize() const {
           this->seq_num());
     }
     
-    // optional int32 max_wait_time = 12;
-    if (has_max_wait_time()) {
+    // optional int32 qos_latency = 12;
+    if (has_qos_latency()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
-          this->max_wait_time());
+          this->qos_latency());
     }
     
     // optional .ZPack.Consistency_level consistency = 13;
@@ -893,15 +958,25 @@ int ZPack::ByteSize() const {
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->consistency());
     }
     
-    // optional .ZPack.Pack_type pack_type = 14 [default = SINGLE];
+    // optional double batch_response_time = 14;
+    if (has_batch_response_time()) {
+      total_size += 1 + 8;
+    }
+    
+    // optional double batch_start_time = 15;
+    if (has_batch_start_time()) {
+      total_size += 1 + 8;
+    }
+    
+    // optional .ZPack.Pack_type pack_type = 16 [default = SINGLE];
     if (has_pack_type()) {
-      total_size += 1 +
+      total_size += 2 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->pack_type());
     }
     
   }
-  // repeated .BatchItem batch_item = 15;
-  total_size += 1 * this->batch_item_size();
+  // repeated .BatchItem batch_item = 17;
+  total_size += 2 * this->batch_item_size();
   for (int i = 0; i < this->batch_item_size(); i++) {
     total_size +=
       ::google::protobuf::internal::WireFormatLite::MessageSizeNoVirtual(
@@ -970,11 +1045,17 @@ void ZPack::MergeFrom(const ZPack& from) {
     if (from.has_seq_num()) {
       set_seq_num(from.seq_num());
     }
-    if (from.has_max_wait_time()) {
-      set_max_wait_time(from.max_wait_time());
+    if (from.has_qos_latency()) {
+      set_qos_latency(from.qos_latency());
     }
     if (from.has_consistency()) {
       set_consistency(from.consistency());
+    }
+    if (from.has_batch_response_time()) {
+      set_batch_response_time(from.batch_response_time());
+    }
+    if (from.has_batch_start_time()) {
+      set_batch_start_time(from.batch_start_time());
     }
     if (from.has_pack_type()) {
       set_pack_type(from.pack_type());
@@ -1013,8 +1094,10 @@ void ZPack::Swap(ZPack* other) {
     std::swap(client_ip_, other->client_ip_);
     std::swap(client_port_, other->client_port_);
     std::swap(seq_num_, other->seq_num_);
-    std::swap(max_wait_time_, other->max_wait_time_);
+    std::swap(qos_latency_, other->qos_latency_);
     std::swap(consistency_, other->consistency_);
+    std::swap(batch_response_time_, other->batch_response_time_);
+    std::swap(batch_start_time_, other->batch_start_time_);
     std::swap(pack_type_, other->pack_type_);
     batch_item_.Swap(&other->batch_item_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
@@ -1040,9 +1123,9 @@ const ::google::protobuf::EnumDescriptor* BatchItem_Consistency_level_descriptor
 }
 bool BatchItem_Consistency_level_IsValid(int value) {
   switch(value) {
-    case 0:
     case 1:
     case 2:
+    case 3:
       return true;
     default:
       return false;
@@ -1064,8 +1147,10 @@ const int BatchItem::kSeqNumFieldNumber;
 const int BatchItem::kOpcodeFieldNumber;
 const int BatchItem::kKeyFieldNumber;
 const int BatchItem::kValFieldNumber;
-const int BatchItem::kMaxWaitTimeFieldNumber;
+const int BatchItem::kQosLatencyFieldNumber;
 const int BatchItem::kConsistencyFieldNumber;
+const int BatchItem::kSubmitTimeFieldNumber;
+const int BatchItem::kResponTimeFieldNumber;
 #endif  // !_MSC_VER
 
 BatchItem::BatchItem()
@@ -1090,8 +1175,10 @@ void BatchItem::SharedCtor() {
   opcode_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   key_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
   val_ = const_cast< ::std::string*>(&::google::protobuf::internal::kEmptyString);
-  max_wait_time_ = 0;
-  consistency_ = 0;
+  qos_latency_ = 0;
+  consistency_ = 1;
+  submit_time_ = 0;
+  respon_time_ = 0;
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
 }
 
@@ -1160,8 +1247,12 @@ void BatchItem::Clear() {
         val_->clear();
       }
     }
-    max_wait_time_ = 0;
-    consistency_ = 0;
+    qos_latency_ = 0;
+    consistency_ = 1;
+  }
+  if (_has_bits_[8 / 32] & (0xffu << (8 % 32))) {
+    submit_time_ = 0;
+    respon_time_ = 0;
   }
   ::memset(_has_bits_, 0, sizeof(_has_bits_));
   mutable_unknown_fields()->Clear();
@@ -1256,19 +1347,19 @@ bool BatchItem::MergePartialFromCodedStream(
         } else {
           goto handle_uninterpreted;
         }
-        if (input->ExpectTag(56)) goto parse_max_wait_time;
+        if (input->ExpectTag(56)) goto parse_qos_latency;
         break;
       }
       
-      // optional int32 max_wait_time = 7;
+      // optional int32 qos_latency = 7;
       case 7: {
         if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
             ::google::protobuf::internal::WireFormatLite::WIRETYPE_VARINT) {
-         parse_max_wait_time:
+         parse_qos_latency:
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
                    ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
-                 input, &max_wait_time_)));
-          set_has_max_wait_time();
+                 input, &qos_latency_)));
+          set_has_qos_latency();
         } else {
           goto handle_uninterpreted;
         }
@@ -1290,6 +1381,38 @@ bool BatchItem::MergePartialFromCodedStream(
           } else {
             mutable_unknown_fields()->AddVarint(8, value);
           }
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(73)) goto parse_submit_time;
+        break;
+      }
+      
+      // optional double submit_time = 9;
+      case 9: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_submit_time:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &submit_time_)));
+          set_has_submit_time();
+        } else {
+          goto handle_uninterpreted;
+        }
+        if (input->ExpectTag(81)) goto parse_respon_time;
+        break;
+      }
+      
+      // optional double respon_time = 10;
+      case 10: {
+        if (::google::protobuf::internal::WireFormatLite::GetTagWireType(tag) ==
+            ::google::protobuf::internal::WireFormatLite::WIRETYPE_FIXED64) {
+         parse_respon_time:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   double, ::google::protobuf::internal::WireFormatLite::TYPE_DOUBLE>(
+                 input, &respon_time_)));
+          set_has_respon_time();
         } else {
           goto handle_uninterpreted;
         }
@@ -1349,15 +1472,25 @@ void BatchItem::SerializeWithCachedSizes(
       6, this->val(), output);
   }
   
-  // optional int32 max_wait_time = 7;
-  if (has_max_wait_time()) {
-    ::google::protobuf::internal::WireFormatLite::WriteInt32(7, this->max_wait_time(), output);
+  // optional int32 qos_latency = 7;
+  if (has_qos_latency()) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(7, this->qos_latency(), output);
   }
   
   // optional .BatchItem.Consistency_level consistency = 8;
   if (has_consistency()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
       8, this->consistency(), output);
+  }
+  
+  // optional double submit_time = 9;
+  if (has_submit_time()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(9, this->submit_time(), output);
+  }
+  
+  // optional double respon_time = 10;
+  if (has_respon_time()) {
+    ::google::protobuf::internal::WireFormatLite::WriteDouble(10, this->respon_time(), output);
   }
   
   if (!unknown_fields().empty()) {
@@ -1406,15 +1539,25 @@ void BatchItem::SerializeWithCachedSizes(
         6, this->val(), target);
   }
   
-  // optional int32 max_wait_time = 7;
-  if (has_max_wait_time()) {
-    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(7, this->max_wait_time(), target);
+  // optional int32 qos_latency = 7;
+  if (has_qos_latency()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(7, this->qos_latency(), target);
   }
   
   // optional .BatchItem.Consistency_level consistency = 8;
   if (has_consistency()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
       8, this->consistency(), target);
+  }
+  
+  // optional double submit_time = 9;
+  if (has_submit_time()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(9, this->submit_time(), target);
+  }
+  
+  // optional double respon_time = 10;
+  if (has_respon_time()) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteDoubleToArray(10, this->respon_time(), target);
   }
   
   if (!unknown_fields().empty()) {
@@ -1470,17 +1613,29 @@ int BatchItem::ByteSize() const {
           this->val());
     }
     
-    // optional int32 max_wait_time = 7;
-    if (has_max_wait_time()) {
+    // optional int32 qos_latency = 7;
+    if (has_qos_latency()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::Int32Size(
-          this->max_wait_time());
+          this->qos_latency());
     }
     
     // optional .BatchItem.Consistency_level consistency = 8;
     if (has_consistency()) {
       total_size += 1 +
         ::google::protobuf::internal::WireFormatLite::EnumSize(this->consistency());
+    }
+    
+  }
+  if (_has_bits_[8 / 32] & (0xffu << (8 % 32))) {
+    // optional double submit_time = 9;
+    if (has_submit_time()) {
+      total_size += 1 + 8;
+    }
+    
+    // optional double respon_time = 10;
+    if (has_respon_time()) {
+      total_size += 1 + 8;
     }
     
   }
@@ -1528,11 +1683,19 @@ void BatchItem::MergeFrom(const BatchItem& from) {
     if (from.has_val()) {
       set_val(from.val());
     }
-    if (from.has_max_wait_time()) {
-      set_max_wait_time(from.max_wait_time());
+    if (from.has_qos_latency()) {
+      set_qos_latency(from.qos_latency());
     }
     if (from.has_consistency()) {
       set_consistency(from.consistency());
+    }
+  }
+  if (from._has_bits_[8 / 32] & (0xffu << (8 % 32))) {
+    if (from.has_submit_time()) {
+      set_submit_time(from.submit_time());
+    }
+    if (from.has_respon_time()) {
+      set_respon_time(from.respon_time());
     }
   }
   mutable_unknown_fields()->MergeFrom(from.unknown_fields());
@@ -1563,8 +1726,10 @@ void BatchItem::Swap(BatchItem* other) {
     std::swap(opcode_, other->opcode_);
     std::swap(key_, other->key_);
     std::swap(val_, other->val_);
-    std::swap(max_wait_time_, other->max_wait_time_);
+    std::swap(qos_latency_, other->qos_latency_);
     std::swap(consistency_, other->consistency_);
+    std::swap(submit_time_, other->submit_time_);
+    std::swap(respon_time_, other->respon_time_);
     std::swap(_has_bits_[0], other->_has_bits_[0]);
     _unknown_fields_.Swap(&other->_unknown_fields_);
     std::swap(_cached_size_, other->_cached_size_);

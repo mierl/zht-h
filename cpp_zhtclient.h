@@ -53,8 +53,8 @@ public:
 	string opcode;
 	string key;
 	string val;
-	int max_tolerant_latency; //The longest time this request can wait, in ms.
-	double arrival_time;
+	int qos_latency; //The longest time this request can wait, in ms.
+	double submit_time;
 	//enum Consistency_level {STRONG, WEAK, EVENTUAL};
 	enum BatchItem_Consistency_level consistency; //From zpack.pb.h
 
@@ -65,6 +65,11 @@ typedef struct recv_thread_args {
 	int client_listen_port;
 
 } recv_args;
+
+typedef struct latency_record{
+	int qos_latency;
+	double actual_latency;
+}latency_rec;
 
 class ZHTClient {
 
@@ -105,6 +110,7 @@ public:
 
 	int batcherVectorInit();// do a testing run, and setup parameters for batch vector
 
+
 	//end.
 private:
 	int commonOp(const string &opcode, const string &key, const string &val,
@@ -115,6 +121,7 @@ private:
 
 	//Tony: ZHT-H addtion
 	recv_args thread_arg;
+
 	//map<string, string> req_ret_status_map;
 
 	//TODO:
@@ -127,7 +134,7 @@ private:
 
 typedef struct monitor_send_thread_args {
 
-	int policy_index;
+	int policy_index; //1: deadline only; 2: deadline + nbatch_size_um_item; 3: deadline + batch_size_bytes; 4: num + size_bytes; 5: num_item only
 	int num_item;
 	unsigned long batch_size;
 
@@ -150,10 +157,12 @@ public:
 
 	static int send_batch(ZPack &batch);
 	double batch_deadline;
+	double batch_start_time;
 	unsigned int batch_num_item;
 	unsigned long batch_size_byte;
 	int latency_time;
 	pthread_mutex_t mutex_batch_local;
+
 
 	list<double> batch_latency_record;
 	list<long> batch_size_record;
@@ -199,7 +208,7 @@ private:
 	//pthread_mutex_t mutex_in_sending;
 	//double batch_deadline;// = TIME_MAX;// batch -wide deadline, a absolute time stamp.
 	// = false;
-	int latency_time;// = 500; //in microsec. Batch must go by this much time before deadline. It's left for transferring and svr side processing.
+	float latency_time;// = 500; //in ms. Batch must go by this much time before deadline. It's left for transferring and svr side processing.
 	monitor_args mon_args;
 };
 
@@ -208,6 +217,8 @@ double const TIME_MAX = 9999999999000000;//a reasonably long time in the future.
 extern bool MONITOR_RUN;
 extern bool CLIENT_RECEIVE_RUN;
 extern vector<Batch> BATCH_VECTOR_GLOBAL;//Has to be global, since it must be accessed by some threads. It hold multiple batches, each for a dest server.
+extern list<latency_rec>LATENCY_LOG;// Same as above.
+extern bool RECORDING_LATENCY;
 //Tony: request for batch processing end.
 
 #endif /* ZHTCLIENT_H_ */
