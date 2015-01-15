@@ -318,7 +318,7 @@ bool TCPStub::recvsend(ProtoAddr addr, const void *recvbuf) {
 	//cout << " TCPStub::recvsend: pack.ParseFromString(result) start"<<endl;
 	ZPack pack;
 	pack.ParseFromString(result);//Tony: changed from result, proto buf problem pron.
-	cout << " TCPStub::recvsend: pack.batch_start_time() done, pack.pack_type() = "<< pack.batch_start_time()<<endl;
+	//cout << " TCPStub::recvsend: pack.batch_start_time() done, pack.batch_start_time() = "<< pack.batch_start_time()<<endl;
 	cout << "TCPStub::recvsend: result.size() = " << sendcount << ", c_str size = "<< strlen(result.c_str())<<endl;
 	if (ZPack_Pack_type_BATCH_REQ == pack.pack_type()) {
 		TCPProxy tcp;
@@ -330,7 +330,7 @@ bool TCPStub::recvsend(ProtoAddr addr, const void *recvbuf) {
 		//cout << " TCPStub::recvsend: tcp.makeClientSocket(): done, start tcp.sendTo...  "<<endl;//cost: " << e2 - s2<< " ms." << endl;
 		//s2 = TimeUtil::getTime_msec();
 		int sent = tcp.sendTo(sock, (void*) result.c_str(), result.size());
-		cout << "sent = "<<sent<<endl;
+		cout << "sent = "<<sent<<", num_item = "<<  pack.batch_item_size() <<endl;
 		//e2 = TimeUtil::getTime_msec();
 		//cout << " TCPStub::recvsend: tcp.sendTo: cost: " << e2 - s2 << " ms."	<< endl;
 		//cout << " TCPStub::recvsend: tcp.makeClientSocket(): done, tcp.sendTo done "<<endl;

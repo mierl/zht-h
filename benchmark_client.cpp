@@ -62,11 +62,13 @@ ZPack batch_pack;
 int client_listen_port = 50009;
 Batch BATCH;
 
+monitor_args DynamicBatchMonitorArgs;
+string LogFilePathPrefix = "";
 void init_packages(bool is_batch) {
 
 	srand(time(NULL));
 
-	int max_latency[] = {50, 100, 500, 1000 };//Don't set 0 for now, not implemented yet.
+	int QoS_Latency[] = { 5, 500, 500,500,500 }; //Don't set 0 for now, not implemented yet.
 
 	if (is_batch) {
 		//Batch batch;
@@ -79,7 +81,7 @@ void init_packages(bool is_batch) {
 			req.client_port = client_listen_port;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
 
-			req.qos_latency = max_latency[rand() % 4]; //randomly set max_latency, but
+			req.qos_latency = QoS_Latency[rand() % 5 ]; //randomly set max_latency, but
 
 			req.key = HashUtil::randomString(keyLen);
 			req.val = HashUtil::randomString(valLen);
@@ -223,7 +225,7 @@ float benchmarkLookup() {
 	char buf[200];
 	sprintf(buf, "Lookuped packages, %d, %d, cost(ms), %f", numOfOps - errCount,
 			numOfOps, end - start);
-	cout << buf << endl;
+	//cout <<   << endl;
 
 	return 0;
 }
@@ -284,23 +286,34 @@ int benchmark_single_batch() {
 	return 0;
 }
 
-
-
-
-int writeLogToFile(string path, list<latency_rec> log){
-
+int writeReqLogToFile(string pathPrefix, list<req_latency_rec> log) {
 	ofstream outFile;
-	outFile.open (path.c_str(), std::ofstream::out | std::ofstream::app);
+	string filePath = pathPrefix + "_ReqLog.txt";
+	outFile.open(filePath.c_str(), std::ofstream::out | std::ofstream::app);
 
-	list<latency_rec>::iterator it;
-	for (it = LATENCY_LOG.begin(); it != LATENCY_LOG.end(); it++) {
+	list<req_latency_rec>::iterator it;
+	for (it = REQ_LATENCY_LOG.begin(); it != REQ_LATENCY_LOG.end(); it++) {
 		std::stringstream s;
-		s <<  (*it).qos_latency << " " << (*it).actual_latency;
-
+		s << (*it).qos_latency << " " << (*it).actual_latency;
 		outFile << s.str() << endl;
 		//std::to_string((*it).qos_latency) << " " << std::to_string((*it).qos_latency);
 	}
+	outFile.close();
+	return 0;
+}
 
+int writeBatchLogToFile(string pathPrefix, list<batch_latency_record> log) {
+	ofstream outFile;
+	string filePath = pathPrefix + "_BatchLog.txt";
+	outFile.open(filePath.c_str() , std::ofstream::out | std::ofstream::app);
+
+	list<batch_latency_record>::iterator it;
+	for (it = BATCH_LATENCY_LOG.begin(); it != BATCH_LATENCY_LOG.end(); it++) {
+		std::stringstream s;
+		s << (*it).num_item << " " << (*it).actual_latency;
+		outFile << s.str() << endl;
+		//std::to_string((*it).qos_latency) << " " << std::to_string((*it).qos_latency);
+	}
 	outFile.close();
 	return 0;
 }
@@ -310,17 +323,20 @@ int benchmark_dynamic_batching(void) {
 	sender.init();
 	pthread_t th_recv = zc.start_receiver_thread(client_listen_port);
 	sleep(1);
-	monitor_args args;
-	args.batch_size = 20000;
-	args.num_item =100;
-	args.policy_index = 1;
+//	monitor_args DynamicBatchMonitorArgs;
+//	DynamicBatchMonitorArgs.batch_size = 20000;
+//	DynamicBatchMonitorArgs.num_item = 1000;
+//	DynamicBatchMonitorArgs.policy_index = 5;
+	//1: deadline only; 2: deadline + nbatch_size_um_item;
+	//3: deadline + batch_size_bytes; 4: num + size_bytes; 5: num_item only
 
-	pthread_t th_monit = sender.start_batch_monitor_thread(args);
-	cout << "start_batch_monitor_thread done, "
-			<<"RAND_REQ_LIST.size() = "<< RAND_REQ_LIST.size()
-			<<", num_item = "<< args.num_item
-			<<", batch_size = " << args.batch_size
-			<<", policy_index = "<<args.policy_index << endl << endl;
+	pthread_t th_monit = sender.start_batch_monitor_thread(
+			DynamicBatchMonitorArgs);
+//	cout << "start_batch_monitor_thread done, " << "RAND_REQ_LIST.size() = "
+//			<< RAND_REQ_LIST.size() << ", num_item = "
+//			<< DynamicBatchMonitorArgs.num_item << ", batch_size = "
+//			<< DynamicBatchMonitorArgs.batch_size << ", policy_index = "
+//			<< DynamicBatchMonitorArgs.policy_index << endl << endl;
 	string result;
 	int i = 0;
 
@@ -332,25 +348,26 @@ int benchmark_dynamic_batching(void) {
 		sender.req_handler(*it, result);
 	}
 	double end = TimeUtil::getTime_msec();
-	cout <<"Finished "<< numOfOps <<" requests in "<< end - start
-			<< "ms, client throughput = " << 1000 * numOfOps/(end - start)
-			<< " ops/s, avg latency = "<< (end - start)/numOfOps << " ms."<<endl<<endl;
+	cout << "Finished " << numOfOps << " requests in " << end - start
+			<< "ms, client throughput = " << 1000 * numOfOps / (end - start)
+			<< " ops/s, avg latency = " << (end - start) / numOfOps << " ms."
+			<< endl << endl;
 //	cout.precision(25);
 //	cout << start<<endl;
 //	cout << end<<endl;
 
 	sleep(2);
-	//MONITOR_RUN = false;
+	MONITOR_RUN = false;
 	pthread_join(th_monit, NULL);
 
-	sleep(2);
-	//CLIENT_RECEIVE_RUN = false;
-	cout<<"Cancel receiver thread now..."<<endl;
-	//pthread_cancel(th_recv);
-	pthread_join(th_recv, NULL);//wait... won't run into here because it still wait at accept()
-	if(true == RECORDING_LATENCY){//write latency log to a file.
-		string logPath = "log";
-		writeLogToFile(logPath, LATENCY_LOG);
+	sleep(10);
+	CLIENT_RECEIVE_RUN = false;
+	cout << "Cancel receiver thread now..." << endl;
+	pthread_cancel(th_recv);
+	//pthread_join(th_recv, NULL);//wait... won't run into here because it still wait at accept()
+	if (true == RECORDING_LATENCY) {		//write latency log to a file.
+		writeReqLogToFile(LogFilePathPrefix, REQ_LATENCY_LOG);
+		writeBatchLogToFile(LogFilePathPrefix, BATCH_LATENCY_LOG);
 	}
 
 	return 0;
@@ -403,7 +420,7 @@ int main(int argc, char **argv) {
 
 	IS_BATCH = false;
 	int c;
-	while ((c = getopt(argc, argv, "z:n:o:v:b:h")) != -1) {
+	while ((c = getopt(argc, argv, "z:n:o:v:b:s:i:p:l:h")) != -1) {
 		switch (c) {
 		case 'z':
 			zhtConf = string(optarg);
@@ -421,15 +438,38 @@ int main(int argc, char **argv) {
 			IS_BATCH = true;
 			string batch_type = "";
 			batch_type = string(optarg);
-			if (0 == batch_type.compare("s")) {
+			if (0 == batch_type.compare("S")) {
 				is_single_batch = true;
 				cout << "Single batching." << endl;
-			} else if (0 == batch_type.compare("d")) {
+			} else if (0 == batch_type.compare("D")) {
 				is_single_batch = false;
 				cout << "Dynamic batching." << endl;
 			}
 		}
 			break;
+		case 's':
+			DynamicBatchMonitorArgs.batch_size = atoi(optarg);
+			cout << "Dynamic batch size: "
+					<< DynamicBatchMonitorArgs.batch_size << endl;
+			break;
+		case 'i':
+			DynamicBatchMonitorArgs.num_item = atoi(optarg);
+			cout << "Dynamic batch number of items: "
+					<< DynamicBatchMonitorArgs.num_item << endl;
+			break;
+		case 'p':
+			DynamicBatchMonitorArgs.policy_index = atoi(optarg);
+			cout << "Dynamic batch policy: "
+					<< DynamicBatchMonitorArgs.policy_index << endl;
+			break;
+		case 'l': {
+			RECORDING_LATENCY = true;
+			LogFilePathPrefix = string(optarg);
+			cout << "Log files Path prefix: " << LogFilePathPrefix << endl;
+
+		}
+			break;
+
 		case 'h':
 			printHelp = 1;
 			break;

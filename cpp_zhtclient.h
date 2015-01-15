@@ -66,10 +66,15 @@ typedef struct recv_thread_args {
 
 } recv_args;
 
-typedef struct latency_record{
+typedef struct request_latency_record{
 	int qos_latency;
 	double actual_latency;
-}latency_rec;
+}req_latency_rec;
+
+typedef struct batch_latency_record{
+	int num_item;//batch size
+	double actual_latency;
+}batch_latency_rec;
 
 class ZHTClient {
 
@@ -160,7 +165,7 @@ public:
 	double batch_start_time;
 	unsigned int batch_num_item;
 	unsigned long batch_size_byte;
-	int latency_time;
+	//float sys_overhead;
 	pthread_mutex_t mutex_batch_local;
 
 
@@ -208,7 +213,7 @@ private:
 	//pthread_mutex_t mutex_in_sending;
 	//double batch_deadline;// = TIME_MAX;// batch -wide deadline, a absolute time stamp.
 	// = false;
-	float latency_time;// = 500; //in ms. Batch must go by this much time before deadline. It's left for transferring and svr side processing.
+	float sys_overhead;// = 500; //in ms. Batch must go by this much time before deadline. It's left for transferring and svr side processing.
 	monitor_args mon_args;
 };
 
@@ -217,8 +222,10 @@ double const TIME_MAX = 9999999999000000;//a reasonably long time in the future.
 extern bool MONITOR_RUN;
 extern bool CLIENT_RECEIVE_RUN;
 extern vector<Batch> BATCH_VECTOR_GLOBAL;//Has to be global, since it must be accessed by some threads. It hold multiple batches, each for a dest server.
-extern list<latency_rec>LATENCY_LOG;// Same as above.
+extern list<req_latency_rec>REQ_LATENCY_LOG;// Same as above.
+extern list<batch_latency_record> BATCH_LATENCY_LOG;
 extern bool RECORDING_LATENCY;
+extern float SYS_OVERHEAD;
 //Tony: request for batch processing end.
 
 #endif /* ZHTCLIENT_H_ */
