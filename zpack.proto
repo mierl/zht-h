@@ -8,18 +8,21 @@ message ZPack{
 	optional bool newvalnull = 7; //used by compare_swap
 	optional int32 replicanum = 8;		
 	
-
+	
 
 	//Tony: added for zht-h
 	//zht-h: 0:single request and return, 1:batch request, 2:batch return
 	optional bytes client_ip = 9; //used by OHT
     optional int32 client_port = 10; //used by OHT
     optional int64 seq_num = 11; //used by OHT
-	optional int32 max_wait_time = 12; //The longest time this request can wait
+	optional int32 qos_latency = 12; //The longest time this request can wait
     optional Consistency_level consistency = 13;
 
-	optional Pack_type pack_type = 14 [default = SINGLE];
-	repeated BatchItem batch_item = 15;
+	optional double batch_response_time = 14;//the time stamp when the response back to client.
+	optional double batch_start_time = 15;//the time stamp when the batch collect the 1st item.
+	
+	optional Pack_type pack_type = 16 [default = SINGLE];
+	repeated BatchItem batch_item = 17;
 
 
     enum Consistency_level{
@@ -29,9 +32,9 @@ message ZPack{
 	}
 	
 	enum Pack_type{
-		SINGLE = 0;
-		BATCH_REQ = 1;
-		BATCH_RET = 2;
+		SINGLE = 1;
+		BATCH_REQ = 2;
+		BATCH_RET = 3;
 	}
 	
 	//Tony: end.
@@ -41,16 +44,19 @@ message BatchItem{
     optional bytes client_ip = 1; 
     optional int32 client_port = 2; 
     optional int64 seq_num = 3; //used by OHT
-    optional bytes opcode =4;
+    optional bytes opcode =4 ;
 	optional bytes key = 5;
     optional bytes val = 6;
-	optional int32 max_wait_time = 7; //The longest time this request can wait
+	optional int32 qos_latency = 7; //The longest time this request can wait
 	optional Consistency_level consistency = 8;
+	
+	optional double submit_time = 9;
+	optional double respon_time = 10;
 
 	enum Consistency_level{
-		STRONG = 0;
-		WEAK = 1;
-		EVENTUAL = 2;
+		STRONG = 1;
+		WEAK = 2;
+		EVENTUAL = 3;
 	}
 
 }
