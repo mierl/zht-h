@@ -61,6 +61,8 @@ bool is_single_batch = false;
 ZPack batch_pack;
 int client_listen_port = 50009;
 Batch BATCH;
+bool IS_STATIC_QOS = true;
+int STATIC_QOS = 10;
 
 monitor_args DynamicBatchMonitorArgs;
 string LogFilePathPrefix = "";
@@ -68,7 +70,7 @@ void init_packages(bool is_batch) {
 
 	srand(time(NULL));
 
-	int QoS_Latency[] = { 5, 500, 500,500,500 }; //Don't set 0 for now, not implemented yet.
+	int QoS_Latency[] = { 5, 500, 500, 500, 500 }; //Don't set 0 for now, not implemented yet.
 
 	if (is_batch) {
 		//Batch batch;
@@ -80,8 +82,10 @@ void init_packages(bool is_batch) {
 			req.client_ip = ip; ////"localhost";
 			req.client_port = client_listen_port;
 			req.consistency = BatchItem_Consistency_level_EVENTUAL;
-
-			req.qos_latency = QoS_Latency[rand() % 5 ]; //randomly set max_latency, but
+			if (IS_STATIC_QOS) {
+				req.qos_latency = STATIC_QOS;
+			} else
+				req.qos_latency = QoS_Latency[rand() % 5]; //randomly set max_latency, but
 
 			req.key = HashUtil::randomString(keyLen);
 			req.val = HashUtil::randomString(valLen);
@@ -305,7 +309,7 @@ int writeReqLogToFile(string pathPrefix, list<req_latency_rec> log) {
 int writeBatchLogToFile(string pathPrefix, list<batch_latency_record> log) {
 	ofstream outFile;
 	string filePath = pathPrefix + "_BatchLog.txt";
-	outFile.open(filePath.c_str() , std::ofstream::out | std::ofstream::app);
+	outFile.open(filePath.c_str(), std::ofstream::out | std::ofstream::app);
 
 	list<batch_latency_record>::iterator it;
 	for (it = BATCH_LATENCY_LOG.begin(); it != BATCH_LATENCY_LOG.end(); it++) {
@@ -420,7 +424,7 @@ int main(int argc, char **argv) {
 
 	IS_BATCH = false;
 	int c;
-	while ((c = getopt(argc, argv, "z:n:o:v:b:s:i:p:l:h")) != -1) {
+	while ((c = getopt(argc, argv, "z:n:o:v:b:s:i:p:l:S:Q:h")) != -1) {
 		switch (c) {
 		case 'z':
 			zhtConf = string(optarg);
@@ -449,8 +453,8 @@ int main(int argc, char **argv) {
 			break;
 		case 's':
 			DynamicBatchMonitorArgs.batch_size = atoi(optarg);
-			cout << "Dynamic batch size: "
-					<< DynamicBatchMonitorArgs.batch_size << endl;
+			cout << "Dynamic batch size: " << DynamicBatchMonitorArgs.batch_size
+					<< endl;
 			break;
 		case 'i':
 			DynamicBatchMonitorArgs.num_item = atoi(optarg);
@@ -467,6 +471,16 @@ int main(int argc, char **argv) {
 			LogFilePathPrefix = string(optarg);
 			cout << "Log files Path prefix: " << LogFilePathPrefix << endl;
 
+		}
+			break;
+		case 'S': {
+			SYS_OVERHEAD = atoi(optarg); //SYS_OVERHEAD
+		}
+			break;
+
+		case 'Q': {
+			IS_STATIC_QOS = true;
+			STATIC_QOS = atoi(optarg);
 		}
 			break;
 
