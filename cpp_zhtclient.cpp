@@ -651,13 +651,13 @@ bool Batch::check_condition_deadline(void) {
 	double t = TimeUtil::getTime_msec();
 
 	if (this->batch_deadline - t <= SYS_OVERHEAD) {
-		cout.precision(23);
-		cout << "Deadline check: batch_deadline: " << this->batch_deadline
-				<< endl;
-		cout << "Deadline check: now: " << t << endl;
-
-		cout << "Deadline check: Time left: " << (this->batch_deadline - t)
-				<< ", this->latency_time: " << SYS_OVERHEAD << endl;
+//		cout.precision(23);
+//		cout << "Deadline check: batch_deadline: " << this->batch_deadline
+//				<< endl;
+//		cout << "Deadline check: now: " << t << endl;
+//
+//		cout << "Deadline check: Time left: " << (this->batch_deadline - t)
+//				<< ", this->latency_time: " << SYS_OVERHEAD << endl;
 		return true;
 	} else
 		return false;
@@ -796,8 +796,8 @@ int Batch::send_batch(void) {	//protected by local mutex
 
 	ZPack temp;
 	temp.ParseFromString(msg.c_str());
-	cout << "sending batch, batch_item_size = " << temp.batch_item_size()
-			<< endl;
+//	cout << "sending batch, batch_item_size = " << temp.batch_item_size()
+//			<< endl;
 
 	/*send to and receive from*/
 //_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
@@ -885,7 +885,7 @@ int AggregatedSender::stop_batch_monitor_thread(void) {
 
 int AggregatedSender::req_handler(Request in_req, string & immediate_result) {
 //cout.precision(20);
-	usleep(1);	//to fix the gap of mutex coverage
+	usleep(10);	//to fix the gap of mutex coverage
 	if (0 == in_req.qos_latency) {
 		cout << "req_handler: max_tolerant_latency = 0" << endl;
 		//TODO: how to handle immediate return results for direct request?
