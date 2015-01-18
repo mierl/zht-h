@@ -47,7 +47,7 @@ using namespace iit::datasys::zht::dm;
 void printUsage(char *argv_0);
 
 int main(int argc, char **argv) {
-
+	signal(SIGPIPE, SIG_IGN);
 	extern char *optarg;
 
 	int printHelp = 0;
@@ -89,7 +89,8 @@ int main(int argc, char **argv) {
 		helpPrinted = 1;
 	}
 
-	try {
+	//try
+	{
 		if (!zhtConf.empty() && !neighborConf.empty()) {
 
 			ConfHandler::NOVOHT_FILE = Const::trim(novohtDbFile);
@@ -144,7 +145,7 @@ int main(int argc, char **argv) {
 #ifdef PF_INET
 
 			EpollServer es(port.c_str(), new IPServer());
-			es.serve();
+			es.serve();//ZHT-H entry
 #elif MPI_INET
 
 			MPIServer mpis(argc, argv);
@@ -156,11 +157,13 @@ int main(int argc, char **argv) {
 			if (!helpPrinted)
 				printUsage(argv[0]);
 		}
-	} catch (exception& e) {
-
-		fprintf(stderr, "%s, exception caught:\n\t%s", "ZHTServer::main",
-				e.what());
 	}
+
+//	catch (exception& e) {
+//
+//		fprintf(stderr, "%s, exception caught:\n\t%s", "ZHTServer::main",
+//				e.what());
+//	}
 
 }
 

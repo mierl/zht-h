@@ -272,7 +272,7 @@ int EpollServer::makeSvrSocket() { //only for svr
 		}
 	} catch (exception& e) {
 
-		fprintf(stderr, "exception caught:\n\t%s", e.what());
+		fprintf(stderr, "EpollServer::makeSvrSocket:  exception caught:\n\t%s", e.what());
 	}
 
 	return svrSock;
@@ -325,7 +325,7 @@ void EpollServer::serve() {
 	int efd;
 	struct epoll_event event;
 	struct epoll_event *events;
-
+	signal(SIGPIPE, SIG_IGN);
 	sfd = makeSvrSocket();
 	if (sfd == -1)
 		abort();
@@ -574,6 +574,7 @@ void EpollServer::serve() {
 								_eventQueue.push(eventData);
 #else
 
+								//ZHT-H major..
 								_ZProcessor->process(edata->fd(), bd.c_str(),
 										*edata->sender());
 

@@ -61,7 +61,7 @@ void IPServer::process(const int& fd, const char * const buf, sockaddr sender) {
 				"IPServer::process(): error on ProxyStubFactory::createStub().\n");
 		return;
 	}
-
+	cout << "IPServer::process: buf strlen:"<<strlen(buf)<<endl;
 	ProtoAddr pa;
 	pa.fd = fd;
 	pa.sender = calloc(1, sizeof(sockaddr));
@@ -70,6 +70,7 @@ void IPServer::process(const int& fd, const char * const buf, sockaddr sender) {
 	string bufstr(buf);
 	//double s2 = TimeUtil::getTime_msec();
 	_stub->recvsend(pa, bufstr.c_str());
+	cout << "IPServer::process: recvsend() done"<<endl;
 	//double e2 = TimeUtil::getTime_msec();
 	//cout << "IPServer::process: recvsend()  cost: "	<< e2 - s2 << " ms." << endl;
 }

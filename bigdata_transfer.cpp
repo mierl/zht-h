@@ -128,7 +128,7 @@ Blob& Blob::assign(const string& blob) {
 	total(strtoul(blob.substr(sc, getCountLen()).c_str(), NULL, 10));
 	sc += getCountLen();
 
-	size(strtoul(blob.substr(sc, getSizeLen()).c_str(), NULL, 10));
+	size(strtoul(blob.substr(sc, getSizeLen()).c_str(), NULL, 10));//prone to give __throw_out_of_range error.
 	sc += getSizeLen();
 
 	value(blob.substr(sc));
@@ -208,7 +208,7 @@ int BdSendBase::bsend(int sock, void *senderAddr) const {
 		string bstr = it->toString();
 
 		if (senderAddr == NULL)
-			count += send(sock, bstr.c_str(), bstr.size(), 0);
+			count += send(sock, bstr.c_str(), bstr.size(), 0);//ZHT-H: SIGPIPE...
 		else
 			count += sendto(sock, bstr.c_str(), bstr.size(), 0,
 					(struct sockaddr *) senderAddr, sizeof(struct sockaddr));

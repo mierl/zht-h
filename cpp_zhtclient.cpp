@@ -47,9 +47,20 @@
 #include "tcp_proxy_stub.h"
 #include "ZHTUtil.h"
 #include <unistd.h>
+#include <signal.h>
 
 //include <gsl/gsl_fit.h> //For linear regression
 using namespace iit::datasys::zht::dm;
+
+void signal_callback_handler(int signum) {
+
+	printf("Caught signal SIGPIPE %d\n", signum);
+}
+
+void sig_pipe(int signum) {
+	printf("SIGPIPE Caught!\n");
+	signal(SIGPIPE, sig_pipe);
+}
 
 pthread_mutex_t mutex_send_update;
 int MSG_MAXSIZE = 1000 * 1000 * 2;
@@ -131,7 +142,7 @@ ZHTClient::~ZHTClient() {
 }
 
 int ZHTClient::init(const string& zhtConf, const string& neighborConf) {
-
+	signal(SIGPIPE, SIG_IGN);
 	ConfHandler::initConf(zhtConf, neighborConf);
 	MSG_MAXSIZE = Env::get_msg_maxsize();
 	_msg_maxsize = Env::get_msg_maxsize();
@@ -145,7 +156,7 @@ int ZHTClient::init(const string& zhtConf, const string& neighborConf) {
 }
 
 int ZHTClient::init(const char *zhtConf, const char *neighborConf) {
-
+	signal(SIGPIPE, SIG_IGN);
 	string szhtconf(zhtConf);
 	string sneighborconf(neighborConf);
 
@@ -804,11 +815,11 @@ int Batch::send_batch(void) {	//protected by local mutex
 	/*send to and receive from*/
 //_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
 	//TCPProxy tcp;
-
 	ZHTUtil zu;
 	HostEntity he = zu.getHostEntityByKey(msg);
 	int sock = CACHE_CONNECTION.getSockCached(he.host, he.port);
-	cout << "sock =  "<<sock<<endl;
+	cout << "batch info: pack_type =  " << this->req_batch.pack_type()
+			<< ", ByteSize = " << this->req_batch.ByteSize() << endl;
 	CACHE_CONNECTION.sendTo(sock, (void*) msg.c_str(), msg.size());
 
 	this->clear_batch();
@@ -919,6 +930,7 @@ void* AggregatedSender::batch_monitor_thread(void* argu) {
 	<< num_item << ", batch_size = " << batch_size << ", policy_index = "
 			<< policy_index << endl << endl;
 	//TCPProxy conn_cache;
+	int i = 1;
 	bool condition = false;
 	while (MONITOR_RUN) {
 		//cout << "batch_monitor_thread: while(MONITOR_RUN), MONITOR_RUN = "<< MONITOR_RUN << endl;
@@ -938,6 +950,7 @@ void* AggregatedSender::batch_monitor_thread(void* argu) {
 //						<< ", batch_size_byte = "<<(*it).batch_size_byte
 //						<< endl;
 				(*it).send_batch(); //Protected by mutex, no need to use in other places in this method.
+				cout << "done sending batch # " << i++ << endl;
 			}
 
 			pthread_mutex_unlock(&((*it).mutex_batch_local));
