@@ -1,4 +1,4 @@
-TARGETS = zht_ctest zht_cpptest zht_ben zhtserver libzht.a c_zhtclient_threaded_test cpp_zhtclient_threaded_test c_zhtclient_lanl_threaded
+TARGETS =  zht_ben zhtserver libzht.a #zht_cpptest cpp_zhtclient_threaded_test # c_zhtclient_lanl_threaded c_zhtclient_threaded_test zht_ctest 
 CC = gcc
 CCFLAGS = -g -I${USER_INCLUDE} -L${USER_LIB} -DPF_INET -DBIG_MSG -DSOCKET_CACHE -DTSQUEUE #-DSCCB
 #CCFLAGS = -g -I${USER_INCLUDE} -L${USER_LIB} -DTHREADED_SERVE -DPF_INET -DBIG_MSG -DSOCKET_CACHE -DSCCB -DTSQUEUE 

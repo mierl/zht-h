@@ -279,6 +279,7 @@ int benchmark_single_batch() {
 
 	double start = TimeUtil::getTime_msec();
 	//Batch::send_batch(batch_pack);
+	//TCPProxy tcp = TCPProxy();
 	BATCH.send_batch();
 	CLIENT_RECEIVE_RUN = false;
 	pthread_join(th, NULL);

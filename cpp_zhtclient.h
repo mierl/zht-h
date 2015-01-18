@@ -40,6 +40,7 @@ using namespace std;
 
 #include "ProxyStubFactory.h"
 #include "zpack.pb.h"
+#include "tcp_proxy_stub.h"
 /*
  *
  */
@@ -226,6 +227,6 @@ extern list<req_latency_rec>REQ_LATENCY_LOG;// Same as above.
 extern list<batch_latency_record> BATCH_LATENCY_LOG;
 extern bool RECORDING_LATENCY;
 extern float SYS_OVERHEAD;
+extern TCPProxy CACHE_CONNECTION;
 //Tony: request for batch processing end.
-
 #endif /* ZHTCLIENT_H_ */

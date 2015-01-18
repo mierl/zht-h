@@ -61,6 +61,7 @@ list<req_latency_rec> REQ_LATENCY_LOG;
 list<batch_latency_record> BATCH_LATENCY_LOG;
 bool RECORDING_LATENCY = true;
 float SYS_OVERHEAD = 1;
+TCPProxy CACHE_CONNECTION = TCPProxy();
 //Duplicated from ip_proxy_stub.cpp
 int loopedrecv(int sock, void *senderAddr, string &srecv) {
 
@@ -392,6 +393,7 @@ string ZHTClient::commonOpInternal(const string &opcode, const string &key,
 	ZHTUtil zu;
 	HostEntity he = zu.getHostEntityByKey(msg);
 	int sock = tcp.getSockCached(he.host, he.port);
+	//cout << "sock =  "<<sock<<endl;
 	tcp.sendTo(sock, (void*) msg.c_str(), msg.size());
 	string res;
 
@@ -801,12 +803,13 @@ int Batch::send_batch(void) {	//protected by local mutex
 
 	/*send to and receive from*/
 //_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
-	TCPProxy tcp;
+	//TCPProxy tcp;
 
 	ZHTUtil zu;
 	HostEntity he = zu.getHostEntityByKey(msg);
-	int sock = tcp.getSockCached(he.host, he.port);
-	tcp.sendTo(sock, (void*) msg.c_str(), msg.size());
+	int sock = CACHE_CONNECTION.getSockCached(he.host, he.port);
+	cout << "sock =  "<<sock<<endl;
+	CACHE_CONNECTION.sendTo(sock, (void*) msg.c_str(), msg.size());
 
 	this->clear_batch();
 	//usleep(500000);
@@ -915,7 +918,7 @@ void* AggregatedSender::batch_monitor_thread(void* argu) {
 
 	<< num_item << ", batch_size = " << batch_size << ", policy_index = "
 			<< policy_index << endl << endl;
-
+	//TCPProxy conn_cache;
 	bool condition = false;
 	while (MONITOR_RUN) {
 		//cout << "batch_monitor_thread: while(MONITOR_RUN), MONITOR_RUN = "<< MONITOR_RUN << endl;

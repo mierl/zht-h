@@ -117,7 +117,8 @@ void IPProtoProxy::putSockMutex(const string& host, const uint& port) {
 		pthread_mutex_t sock_mutex;
 		pthread_mutex_init(&sock_mutex, NULL);
 
-		MUTEX_CACHE[hashKey] = sock_mutex;
+		//MUTEX_CACHE[hashKey] = sock_mutex;
+		MUTEX_CACHE.insert(std::pair<string, pthread_mutex_t>(hashKey, sock_mutex));
 	}
 }
 

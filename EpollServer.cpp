@@ -426,8 +426,9 @@ void EpollServer::serve() {
 							abort();
 						}
 
-						reuseSock(infd);
-
+						reuseSock(infd); 
+						//cout << "server accept: socket = "<<in_addr<<endl;
+	
 						event.data.ptr = new EpollData(infd, in_addr);
 						event.events = EPOLLIN | EPOLLET;
 						s = epoll_ctl(efd, EPOLL_CTL_ADD, infd, &event);

@@ -147,13 +147,17 @@ int TCPProxy::getSockCached(const string& host, const uint& port) {
 			sock = -1;
 		} else {
 
-			CONN_CACHE[hashKey] = sock;
+			//CONN_CACHE[hashKey] = sock;
+			CONN_CACHE.insert(std::pair<string, int>(hashKey, sock));
+			it = CONN_CACHE.find(hashKey);
+			cout<<"New sock inserted: "<< sock <<", and find: "<<	it->second <<	", current cache size: "<< CONN_CACHE.size()<<endl;
 
 			putSockMutex(host, port);
 		}
 	} else {
 
 		sock = it->second;
+		cout<<"TCPProxy::getSockCached: found cached sock : " <<sock<<endl;
 	}
 #else
 	sock = makeClientSocket(host, port);
