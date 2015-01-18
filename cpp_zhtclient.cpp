@@ -807,8 +807,9 @@ int Batch::send_batch(void) {	//protected by local mutex
 	HostEntity he = zu.getHostEntityByKey(msg);
 	int sock = tcp.getSockCached(he.host, he.port);
 	tcp.sendTo(sock, (void*) msg.c_str(), msg.size());
-//usleep(1000);
+
 	this->clear_batch();
+	//usleep(500000);
 
 //pthread_mutex_unlock(&this->mutex_batch_local);
 
@@ -853,7 +854,7 @@ int AggregatedSender::init() {
 //this->batch_deadline = TIME_MAX;// batch -wide deadline, a absolute time stamp.
 	MONITOR_RUN = false;
 
-	Batch init_batch;
+	Batch init_batch = Batch();
 	for (int i = 0; i < ConfHandler::NeighborVector.size(); i++) {
 		BATCH_VECTOR_GLOBAL.push_back(init_batch);
 	}
