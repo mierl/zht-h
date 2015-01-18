@@ -89,34 +89,67 @@ int main(int argc, char **argv) {
 		helpPrinted = 1;
 	}
 
-	//try
-	{
+
+//-------------------------------------	zht-h
+	ConfHandler::NOVOHT_FILE = Const::trim(novohtDbFile);
+
+				/*init config*/
+				ConfHandler::initConf(zhtConf, neighborConf);
+
+				/*get protocol and port*/
+				protocol = ConfHandler::getProtocolFromConf();
+
+				/*get port, port defined interactively overrides that in configure*/
+				port_from_conf = ConfHandler::getPortFromConf();
+
+				if (port_from_conf.empty()) {
+
+					cout << "zht.conf: port not configured" << endl;
+				}
+
+				string port =
+						!port_from_input.empty() ? port_from_input : port_from_conf;
+
+				if (port.empty()) {
+
+					cout << "zht server: port not defined by user" << endl;
+					exit(1);
+				}
+//-------------------------------------	zht-h
+
+#ifdef PF_INET
+		EpollServer es = EpollServer(port.c_str(), new IPServer());
+
+#endif
+
+	START:
+	try {
 		if (!zhtConf.empty() && !neighborConf.empty()) {
 
-			ConfHandler::NOVOHT_FILE = Const::trim(novohtDbFile);
-
-			/*init config*/
-			ConfHandler::initConf(zhtConf, neighborConf);
-
-			/*get protocol and port*/
-			protocol = ConfHandler::getProtocolFromConf();
-
-			/*get port, port defined interactively overrides that in configure*/
-			port_from_conf = ConfHandler::getPortFromConf();
-
-			if (port_from_conf.empty()) {
-
-				cout << "zht.conf: port not configured" << endl;
-			}
-
-			string port =
-					!port_from_input.empty() ? port_from_input : port_from_conf;
-
-			if (port.empty()) {
-
-				cout << "zht server: port not defined by user" << endl;
-				exit(1);
-			}
+//			ConfHandler::NOVOHT_FILE = Const::trim(novohtDbFile);
+//
+//			/*init config*/
+//			ConfHandler::initConf(zhtConf, neighborConf);
+//
+//			/*get protocol and port*/
+//			protocol = ConfHandler::getProtocolFromConf();
+//
+//			/*get port, port defined interactively overrides that in configure*/
+//			port_from_conf = ConfHandler::getPortFromConf();
+//
+//			if (port_from_conf.empty()) {
+//
+//				cout << "zht.conf: port not configured" << endl;
+//			}
+//
+//			string port =
+//					!port_from_input.empty() ? port_from_input : port_from_conf;
+//
+//			if (port.empty()) {
+//
+//				cout << "zht server: port not defined by user" << endl;
+//				exit(1);
+//			}
 
 			/*make sure protocol defined*/
 			if (protocol.empty()) {
@@ -144,8 +177,9 @@ int main(int argc, char **argv) {
 
 #ifdef PF_INET
 
-			EpollServer es(port.c_str(), new IPServer());
-			es.serve();//ZHT-H entry
+			//EpollServer es(port.c_str(), new IPServer()); see top
+			//es = EpollServer(port.c_str(), new IPServer());
+			es.serve(); //ZHT-H entry
 #elif MPI_INET
 
 			MPIServer mpis(argc, argv);
@@ -159,11 +193,17 @@ int main(int argc, char **argv) {
 		}
 	}
 
-//	catch (exception& e) {
-//
-//		fprintf(stderr, "%s, exception caught:\n\t%s", "ZHTServer::main",
-//				e.what());
-//	}
+	catch (exception& e) {
+
+		fprintf(stderr, "%s, exception caught:\n\t%s", "ZHTServer::main",
+				e.what());
+		cout<<"zhtserver recovering..."<<endl;
+#ifdef PF_INET
+		close(es.svr_sock);
+#endif
+		goto START;
+		//ZHT-H entry
+	}
 
 }
 

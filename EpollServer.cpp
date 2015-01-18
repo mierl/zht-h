@@ -233,6 +233,8 @@ int EpollServer::makeSvrSocket() { //only for svr
 			svrSock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 		}
 
+		reuseSock(svrSock); //tony
+
 		if (svrSock < 0) {
 
 			printf(
@@ -327,14 +329,28 @@ void EpollServer::serve() {
 	struct epoll_event *events;
 	signal(SIGPIPE, SIG_IGN);
 	sfd = makeSvrSocket();
-	if (sfd == -1)
+
+	this->svr_sock = sfd;//zht-h
+
+	reuseSock(sfd);
+	int i=1;
+	if(sfd == -1){
+		//system(" /etc/init.d/networking restart");//I hate this fix.
+	}
+	while (sfd == -1){
 		abort();
+
+		//sleep(1);
+		//sfd = makeSvrSocket();
+
+	}
+
 
 	s = make_socket_non_blocking(sfd);
 	if (s == -1)
 		abort();
 
-	reuseSock(sfd);
+
 
 	efd = epoll_create(1);
 	if (efd == -1) {

@@ -818,8 +818,8 @@ int Batch::send_batch(void) {	//protected by local mutex
 	ZHTUtil zu;
 	HostEntity he = zu.getHostEntityByKey(msg);
 	int sock = CACHE_CONNECTION.getSockCached(he.host, he.port);
-	cout << "batch info: pack_type =  " << this->req_batch.pack_type()
-			<< ", ByteSize = " << this->req_batch.ByteSize() << endl;
+	//cout << "batch info: pack_type =  " << this->req_batch.pack_type()
+	//		<< ", ByteSize = " << this->req_batch.ByteSize() << endl;
 	CACHE_CONNECTION.sendTo(sock, (void*) msg.c_str(), msg.size());
 
 	this->clear_batch();
@@ -950,7 +950,7 @@ void* AggregatedSender::batch_monitor_thread(void* argu) {
 //						<< ", batch_size_byte = "<<(*it).batch_size_byte
 //						<< endl;
 				(*it).send_batch(); //Protected by mutex, no need to use in other places in this method.
-				cout << "done sending batch # " << i++ << endl;
+				//cout << "done sending batch # " << i++ << endl;
 			}
 
 			pthread_mutex_unlock(&((*it).mutex_batch_local));

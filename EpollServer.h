@@ -87,6 +87,8 @@ public:
 
 	void serve();
 
+	int svr_sock; //zht-h
+	//EpollServer();//zht-h
 private:
 	int create_and_bind(const char *port);
 	int create_and_bind(const char *host, const char *port);
