@@ -47,6 +47,7 @@ using namespace iit::datasys::zht::dm;
 void printUsage(char *argv_0);
 
 int main(int argc, char **argv) {
+	printUsage(argv[0]);
 	signal(SIGPIPE, SIG_IGN);
 	extern char *optarg;
 
