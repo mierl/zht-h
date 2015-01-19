@@ -820,7 +820,21 @@ int Batch::send_batch(void) {	//protected by local mutex
 	int sock = CACHE_CONNECTION.getSockCached(he.host, he.port);
 	//cout << "batch info: pack_type =  " << this->req_batch.pack_type()
 	//		<< ", ByteSize = " << this->req_batch.ByteSize() << endl;
-	CACHE_CONNECTION.sendTo(sock, (void*) msg.c_str(), msg.size());
+	int ret = CACHE_CONNECTION.sendTo(sock, (void*) msg.c_str(), msg.size());
+	while (ret < 0) {
+		cout << "Broken pipe, Cache failed." << endl;
+		string hashKey = HashUtil::genBase(he.host, he.port);
+		sock = CACHE_CONNECTION.makeClientSocket(he.host, he.port);
+		if (sock > 0) {
+			CACHE_CONNECTION.CONN_CACHE.insert(
+					std::pair<string, int>(hashKey, sock));
+			cout << "Cache recovered, sock = " << sock << endl;
+			ret = CACHE_CONNECTION.sendTo(sock, (void*) msg.c_str(),
+					msg.size());
+		}
+
+	}
+	//++++++:: connection refused happened here: go back an create a new entry in the cache.
 
 	this->clear_batch();
 	//usleep(500000);

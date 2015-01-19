@@ -45,7 +45,7 @@ class TCPProxy: public IPProtoProxy {
 public:
 	typedef map<string, int> MAP;
 	typedef MAP::iterator MIT;
-
+	MAP CONN_CACHE;
 public:
 	TCPProxy();
 	virtual ~TCPProxy();
@@ -68,7 +68,7 @@ private:
 
 private:
 	//static MAP CONN_CACHE;
-	MAP CONN_CACHE;
+//	MAP CONN_CACHE;
 };
 
 class TCPStub: public IPProtoStub {
