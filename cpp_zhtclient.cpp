@@ -704,14 +704,14 @@ bool Batch::check_condition_num_item(int max_item) {
 }
 int Batch::addToBatch(Request item) { //protected by local mutex
 
-	item.submit_time = TimeUtil::getTime_msec();
+	item.submit_time = TimeUtil::getTime_usec();
 
 	if (0 == this->batch_start_time) { //1st item, means the start of a batching.
 		//cout << "1st item, batch starts at" << item.submit_time << endl;
 		this->batch_start_time = item.submit_time;
 		this->req_batch.set_batch_start_time(item.submit_time);
 	}
-
+	double s2= TimeUtil::getTime_usec();
 	pthread_mutex_lock(&this->mutex_batch_local);
 
 	BatchItem* newItem = this->req_batch.add_batch_item();
@@ -738,7 +738,8 @@ int Batch::addToBatch(Request item) { //protected by local mutex
 	this->batch_num_item++;
 
 	pthread_mutex_unlock(&this->mutex_batch_local);
-
+	double end = TimeUtil::getTime_usec();
+	cout << "addToBatch costs: "<< end -item.submit_time <<" us; in mutex: "<<end -s2<<" us"<<endl;
 	return 0;
 }
 
@@ -802,13 +803,14 @@ int Batch::send_batch(void) {	//protected by local mutex
 //pthread_mutex_lock(&this->mutex_batch_local);
 
 // serialize the message to string
+	double s1 = TimeUtil::getTime_usec();
 	string msg = this->req_batch.SerializeAsString();
 
 	char *buf = (char*) calloc(MSG_MAXSIZE, sizeof(char));
 	size_t msz = MSG_MAXSIZE;
 
-	ZPack temp;
-	temp.ParseFromString(msg.c_str());
+	//ZPack temp;
+	//temp.ParseFromString(msg.c_str());
 //	cout << "sending batch, batch_item_size = " << temp.batch_item_size()
 //			<< endl;
 
@@ -820,7 +822,13 @@ int Batch::send_batch(void) {	//protected by local mutex
 	int sock = CACHE_CONNECTION.getSockCached(he.host, he.port);
 	//cout << "batch info: pack_type =  " << this->req_batch.pack_type()
 	//		<< ", ByteSize = " << this->req_batch.ByteSize() << endl;
+	double s2 = TimeUtil::getTime_usec();
 	int ret = CACHE_CONNECTION.sendTo(sock, (void*) msg.c_str(), msg.size());
+
+	double e1 = TimeUtil::getTime_usec();
+
+
+
 	while (ret < 0) {
 		cout << "Broken pipe, Cache failed." << endl;
 		string hashKey = HashUtil::genBase(he.host, he.port);
@@ -837,6 +845,8 @@ int Batch::send_batch(void) {	//protected by local mutex
 	//++++++:: connection refused happened here: go back an create a new entry in the cache.
 
 	this->clear_batch();
+	double e2 = TimeUtil::getTime_usec();
+	cout<< "send_batch total cost: "<< e2-s1<<" us, prepare cost: "<<s2-s1<<" us, pure send cost "<< e1-s2<<" us, cleanup cost: "<< e2-e1<<" us"<<endl;
 	//usleep(500000);
 
 //pthread_mutex_unlock(&this->mutex_batch_local);
@@ -914,7 +924,7 @@ int AggregatedSender::stop_batch_monitor_thread(void) {
 
 int AggregatedSender::req_handler(Request in_req, string & immediate_result) {
 //cout.precision(20);
-	usleep(10);	//to fix the gap of mutex coverage
+	//usleep(10);	//to fix the gap of mutex coverage
 	if (0 == in_req.qos_latency) {
 		cout << "req_handler: max_tolerant_latency = 0" << endl;
 		//TODO: how to handle immediate return results for direct request?
