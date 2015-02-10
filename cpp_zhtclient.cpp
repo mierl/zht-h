@@ -805,7 +805,7 @@ int Batch::send_batch(void) {	//protected by local mutex
 // serialize the message to string
 	double s1 = TimeUtil::getTime_usec();
 	string msg = this->req_batch.SerializeAsString();
-
+	double s1_5 = TimeUtil::getTime_usec();
 	char *buf = (char*) calloc(MSG_MAXSIZE, sizeof(char));
 	size_t msz = MSG_MAXSIZE;
 
@@ -817,12 +817,15 @@ int Batch::send_batch(void) {	//protected by local mutex
 	/*send to and receive from*/
 //_proxy->sendrecv(msg.c_str(), msg.size(), buf, msz);
 	//TCPProxy tcp;
+
 	ZHTUtil zu;
-	HostEntity he = zu.getHostEntityByKey(msg);
+	double s1_7 = TimeUtil::getTime_usec();
+	HostEntity he = zu.getHostEntityByKey(msg); //about 37us
+	double s2 = TimeUtil::getTime_usec();
 	int sock = CACHE_CONNECTION.getSockCached(he.host, he.port);
 	//cout << "batch info: pack_type =  " << this->req_batch.pack_type()
 	//		<< ", ByteSize = " << this->req_batch.ByteSize() << endl;
-	double s2 = TimeUtil::getTime_usec();
+
 	int ret = CACHE_CONNECTION.sendTo(sock, (void*) msg.c_str(), msg.size());
 
 	double e1 = TimeUtil::getTime_usec();
@@ -847,6 +850,8 @@ int Batch::send_batch(void) {	//protected by local mutex
 	this->clear_batch();
 	double e2 = TimeUtil::getTime_usec();
 	cout<< "send_batch total cost: "<< e2-s1<<" us, prepare cost: "<<s2-s1<<" us, pure send cost "<< e1-s2<<" us, cleanup cost: "<< e2-e1<<" us"<<endl;
+	cout<<"serieslizing costs "<< s1_5 - s1 <<" us"<<endl;
+	cout<<" getHostEntityByKey costs "<< s2 - s1_7 <<" us"<<endl;
 	//usleep(500000);
 
 //pthread_mutex_unlock(&this->mutex_batch_local);
