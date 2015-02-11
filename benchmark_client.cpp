@@ -61,7 +61,7 @@ bool is_single_batch = false;
 ZPack batch_pack;
 int client_listen_port = 50009;
 Batch BATCH;
-bool IS_STATIC_QOS = true;
+bool IS_STATIC_QOS = false;
 int STATIC_QOS = 10;
 
 monitor_args DynamicBatchMonitorArgs;
@@ -365,7 +365,7 @@ int benchmark_dynamic_batching(void) {
 	MONITOR_RUN = false;
 	pthread_join(th_monit, NULL);
 
-	sleep(10);
+	sleep(5);
 	CLIENT_RECEIVE_RUN = false;
 	cout << "Cancel receiver thread now..." << endl;
 	pthread_cancel(th_recv);
@@ -425,7 +425,7 @@ int main(int argc, char **argv) {
 
 	IS_BATCH = false;
 	int c;
-	while ((c = getopt(argc, argv, "z:n:o:v:b:s:i:p:l:S:Q:h")) != -1) {
+	while ((c = getopt(argc, argv, "z:n:o:v:b:s:i:p:l:S:Q:X:h")) != -1) {
 		switch (c) {
 		case 'z':
 			zhtConf = string(optarg);
@@ -482,6 +482,15 @@ int main(int argc, char **argv) {
 		case 'Q': {
 			IS_STATIC_QOS = true;
 			STATIC_QOS = atoi(optarg);
+		}
+			break;
+
+		case 'X': { // Special operations
+			if (0 == string(optarg).compare("V")) {
+				VIRTUAL = true;
+				cout << "Virtual mode..." << endl;
+			}
+
 		}
 			break;
 

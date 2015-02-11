@@ -112,6 +112,8 @@ public:
 	//static int makeBatch(list<Request> src, ZPack &batch);
 	//static int addToBatch(Request item, ZPack &batch); // by GPB
 	static void* client_receiver_thread(void* arg);
+	static void* client_receiver_thread_virtual(void* arg);
+
 	pthread_t start_receiver_thread(int port);
 
 	int batcherVectorInit();// do a testing run, and setup parameters for batch vector
@@ -157,6 +159,7 @@ public:
 	//A series of methods, test the condition by different policy
 	int clear_batch(void);
 	int addToBatch(Request item);
+	int addToBatchVirtual(Request item);
 	int addToSwapBatch(Request item);
 	int send_batch(void);
 	int makeBatch(list<Request> src);
@@ -228,5 +231,6 @@ extern list<batch_latency_record> BATCH_LATENCY_LOG;
 extern bool RECORDING_LATENCY;
 extern float SYS_OVERHEAD;
 extern TCPProxy CACHE_CONNECTION;
+extern bool VIRTUAL;
 //Tony: request for batch processing end.
 #endif /* ZHTCLIENT_H_ */
