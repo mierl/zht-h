@@ -72,12 +72,8 @@ bool VIRTUAL = false;
 vector<Batch> BATCH_VECTOR_GLOBAL;
 list<req_latency_rec> REQ_LATENCY_LOG;
 
-class TimeStampList {
-public:
-	list<double> timeList;
-};
-map<string, TimeStampList> REQ_SUBMIT_TIME; //(batchKey, reqLatencyList), for calculating request latency
-//map<string, double> BATCH_SUBMIT_TIME; //for calculating batch latency: no need, use 1st req submit time
+std::map<string, TimeStampList> REQ_SUBMIT_TIME; //(batchKey, reqLatencyList), for calculating request latency
+std::map<string, double> BATCH_SUBMIT_TIME; //for calculating batch latency: no need, use 1st req submit time
 
 list<batch_latency_record> BATCH_LATENCY_LOG;
 bool RECORDING_LATENCY = true;
@@ -640,41 +636,65 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 		int recvcount = loopedrecv(connfd, NULL, result);
 //		cout << "after loopedrecv, ...recvcount = " << recvcount
 //				<< ", result.size() = "<<result.size()<<endl;
-
+		double batch_arr_time = TimeUtil::getTime_msec();
 		ZPack res_pack;
 		if (res_pack.ParseFromString(result)) {
 			//cout << "res_pack unpack: true" << endl;
 		}
 
 		if (true == RECORDING_LATENCY) {
-			double batch_arr_time = TimeUtil::getTime_msec();
-//			cout.precision(17);
-//			cout << ++i << "th batch, size = " << result.size()
-//					<<", res_pack.batch_item_size() = "<<res_pack.batch_item_size()
-//					<< ", started at " << res_pack.batch_start_time()
-//					<< ", actual latency: "
-//					<< batch_arr_time - res_pack.batch_start_time() << endl;
+			if (VIRTUAL) {
 
-			//usleep(100);
-			//res_pack.batch_item_size()
-			//for (int j = 0; j < 1; j++);//do nothing, but help?
+				TimeStampList reqList =
+						REQ_SUBMIT_TIME.find(res_pack.key())->second;
 
-			for (int j = 0; j < res_pack.batch_item_size(); j++) { //recording latency for analysis
-				BatchItem batch_item = res_pack.batch_item(j);
-//				cout << "item_" << j + 1 << ", key = " << batch_item.key()
-//						<< ", val = " << batch_item.val() << endl;
-				request_latency_record rec;
-				rec.qos_latency = batch_item.qos_latency();
-				rec.actual_latency = batch_arr_time - batch_item.submit_time();
-				//cout<< "submit_time: " << batch_item.submit_time()<<endl;
-				REQ_LATENCY_LOG.push_back(rec);
+				for (list<double>::iterator it = reqList.timeList.begin();
+						it != reqList.timeList.end(); ++it) {
+					req_latency_rec rec;
+					rec.actual_latency = batch_arr_time - *it;
+					rec.qos_latency = 0;
+					REQ_LATENCY_LOG.push_back(rec);
+				}
+
+				batch_latency_record batchRec;
+				batchRec.num_item = 0;
+				batchRec.actual_latency = batch_arr_time
+						- *(reqList.timeList.begin()); //the 1st request submit time is right the batch submit time.
+
+				BATCH_LATENCY_LOG.push_back(batchRec);
+
+			} else {
+
+				//			cout.precision(17);
+				//			cout << ++i << "th batch, size = " << result.size()
+				//					<<", res_pack.batch_item_size() = "<<res_pack.batch_item_size()
+				//					<< ", started at " << res_pack.batch_start_time()
+				//					<< ", actual latency: "
+				//					<< batch_arr_time - res_pack.batch_start_time() << endl;
+
+				//usleep(100);
+				//res_pack.batch_item_size()
+				//for (int j = 0; j < 1; j++);//do nothing, but help?
+
+				for (int j = 0; j < res_pack.batch_item_size(); j++) { //recording latency for analysis
+					BatchItem batch_item = res_pack.batch_item(j);
+					//				cout << "item_" << j + 1 << ", key = " << batch_item.key()
+					//						<< ", val = " << batch_item.val() << endl;
+					request_latency_record rec;
+					rec.qos_latency = batch_item.qos_latency();
+					rec.actual_latency = batch_arr_time
+							- batch_item.submit_time();
+					//cout<< "submit_time: " << batch_item.submit_time()<<endl;
+					REQ_LATENCY_LOG.push_back(rec);
+				}
+
+				batch_latency_record batch_rec;
+				batch_rec.num_item = res_pack.batch_item_size();
+				batch_rec.actual_latency = batch_arr_time
+						- res_pack.batch_start_time();
+				BATCH_LATENCY_LOG.push_back(batch_rec);
 			}
 
-			batch_latency_record batch_rec;
-			batch_rec.num_item = res_pack.batch_item_size();
-			batch_rec.actual_latency = batch_arr_time
-					- res_pack.batch_start_time();
-			BATCH_LATENCY_LOG.push_back(batch_rec);
 		}
 
 //		cout << "Client received a batch, contains " << res.batch_item_size()
@@ -739,7 +759,7 @@ Batch::Batch() {
 	// mutex has to be initialized here, since Batch::init() is called by clear(), initialization will be done again.
 }
 
-int Batch::init(void) {
+int Batch::init(void) {	//
 	this->req_batch.Clear();
 	this->req_batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
 	//this->req_batch_swap.set_pack_type(ZPack_Pack_type_BATCH_REQ);
@@ -869,38 +889,41 @@ int Batch::addToBatch(Request item) { //protected by local mutex
 
 int Batch::addToBatchVirtual(Request item) { //protected by local mutex
 
-	item.submit_time = TimeUtil::getTime_usec();
-
+	//item.submit_time = TimeUtil::getTime_usec();
+	//REQ_LATENCY_LOG.push_back();
+	this->req_submit_time.timeList.push_back(TimeUtil::getTime_usec()); //don't clear this timeStamp list when doing clearing.
 	if (0 == this->batch_start_time) { //1st item, means the start of a batching.
 		//cout << "1st item, batch starts at" << item.submit_time << endl;
 		this->batch_start_time = item.submit_time;
 		this->req_batch.set_batch_start_time(item.submit_time);
+		this->req_batch.set_key(item.key);
 	}
 	double s2 = TimeUtil::getTime_usec();
 	pthread_mutex_lock(&this->mutex_batch_local);
+	this->virtualPackSize += item.transferSize;
 
-	BatchItem* newItem = this->req_batch.add_batch_item();
-	newItem->set_key(item.key);
-	newItem->set_val(item.val);
-	newItem->set_client_ip(item.client_ip);
-	newItem->set_client_port(item.client_port);
-	newItem->set_opcode(item.opcode);
-	newItem->set_qos_latency(item.qos_latency);
-	newItem->set_consistency(item.consistency);
-
-	newItem->set_submit_time(item.submit_time);
-//Used to update batch deadline.
-	double in_req_deadline = item.submit_time + item.qos_latency; // * 1000; //max_tolerant_latency is in ms
-
-//cout <<"in_req_deadline: "<< in_req_deadline<<endl;
-//cout <<"this->batch_deadline: "<<this->batch_deadline<<endl;
-	if (this->batch_deadline > in_req_deadline) { // new req is the most urgent one
-		this->batch_deadline = in_req_deadline;
-	}
-
-	this->batch_size_byte = this->req_batch.ByteSize();
-
-	this->batch_num_item++;
+//	BatchItem* newItem = this->req_batch.add_batch_item();
+//	newItem->set_key(item.key);
+//	newItem->set_val(item.val);
+//	newItem->set_client_ip(item.client_ip);
+//	newItem->set_client_port(item.client_port);
+//	newItem->set_opcode(item.opcode);
+//	newItem->set_qos_latency(item.qos_latency);
+//	newItem->set_consistency(item.consistency);
+//
+//	newItem->set_submit_time(item.submit_time);
+////Used to update batch deadline.
+//	double in_req_deadline = item.submit_time + item.qos_latency; // * 1000; //max_tolerant_latency is in ms
+//
+////cout <<"in_req_deadline: "<< in_req_deadline<<endl;
+////cout <<"this->batch_deadline: "<<this->batch_deadline<<endl;
+//	if (this->batch_deadline > in_req_deadline) { // new req is the most urgent one
+//		this->batch_deadline = in_req_deadline;
+//	}
+//
+//	this->batch_size_byte = this->req_batch.ByteSize();
+//
+//	this->batch_num_item++;
 
 	pthread_mutex_unlock(&this->mutex_batch_local);
 	double end = TimeUtil::getTime_usec();
@@ -958,6 +981,7 @@ int Batch::clear_batch(void) {
 //Mutex is used in the beginning of send_batch, it can't be obtained here; and clear will only be called after send, so it's safe.
 //pthread_mutex_lock(&this->mutex_batch_local);
 	this->init();
+	this->req_submit_time.timeList.clear();
 //pthread_mutex_unlock(&this->mutex_batch_local);
 	return 0;
 }
@@ -969,6 +993,14 @@ int Batch::send_batch(void) {	//protected by local mutex
 //pthread_mutex_lock(&this->mutex_batch_local);
 
 // serialize the message to string
+	if (VIRTUAL) {
+		this->req_batch.set_val(HashUtil::randomString(this->virtualPackSize));
+		//REQ_SUBMIT_TIME.insert(REQ_SUBMIT_TIME.end(), this->req_submit_time.begin(), this->req_submit_time.begin());
+		REQ_SUBMIT_TIME.insert(
+				pair<string, TimeStampList>(this->req_batch.key(),
+						this->req_submit_time));
+	}
+
 	double s1 = TimeUtil::getTime_usec();
 	string msg = this->req_batch.SerializeAsString();
 	double s1_5 = TimeUtil::getTime_usec();
@@ -1009,6 +1041,8 @@ int Batch::send_batch(void) {	//protected by local mutex
 
 	}
 	//++++++:: connection refused happened here: go back an create a new entry in the cache.
+
+	//Copy a batch of request submit time to global space for later saving.
 
 	this->clear_batch();
 	double e2 = TimeUtil::getTime_usec();

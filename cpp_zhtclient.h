@@ -58,6 +58,7 @@ public:
 	double submit_time;
 	//enum Consistency_level {STRONG, WEAK, EVENTUAL};
 	enum BatchItem_Consistency_level consistency; //From zpack.pb.h
+	unsigned long transferSize;
 
 };
 
@@ -148,6 +149,11 @@ typedef struct monitor_send_thread_args {
 
 } monitor_args;
 
+class TimeStampList {
+public:
+	list<double> timeList;
+};
+
 class Batch {
 public:
 	Batch();
@@ -168,6 +174,7 @@ public:
 	double batch_deadline;
 	double batch_start_time;
 	unsigned int batch_num_item;
+	unsigned long virtualPackSize;
 	unsigned long batch_size_byte;
 	//float sys_overhead;
 	pthread_mutex_t mutex_batch_local;
@@ -178,8 +185,8 @@ public:
 	double trans_factor; //Calculated by linear regression, transferring latency = a*size+b
 	double trans_const;
 
-
-
+	//list<double> req_submit_time;
+	TimeStampList req_submit_time;
 private:
 	ZPack req_batch;
 	//ZPack req_batch_swap;

@@ -78,17 +78,18 @@ void init_packages(bool is_batch) {
 		string ip = ZHTUtil::getLocalIP();
 		for (int i = 0; i < numOfOps; i++) {
 			Request req;
-			req.opcode = "003"; //003: insert
-			req.client_ip = ip; ////"localhost";
-			req.client_port = client_listen_port;
-			req.consistency = BatchItem_Consistency_level_EVENTUAL;
-			if (IS_STATIC_QOS) {
+			req.opcode = "003"; //003: insert, 3 bytes
+			req.client_ip = ip; ////"localhost", 16 bytes;
+			req.client_port = client_listen_port; //4 bytes
+			req.consistency = BatchItem_Consistency_level_EVENTUAL; //4 bytes
+			if (IS_STATIC_QOS) {	//4 bytes
 				req.qos_latency = STATIC_QOS;
 			} else
 				req.qos_latency = QoS_Latency[rand() % 5]; //randomly set max_latency, but
 
-			req.key = HashUtil::randomString(keyLen);
-			req.val = HashUtil::randomString(valLen);
+			req.key = HashUtil::randomString(keyLen); //
+			req.val = HashUtil::randomString(valLen); //
+			req.transferSize = keyLen + valLen + 28;
 			if (is_single_batch) { // only send one batch, only one server.
 				BATCH.addToBatch(req);
 				//cout << "single batching: req push: " << i << endl;
