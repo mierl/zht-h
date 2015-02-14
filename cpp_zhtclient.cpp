@@ -1022,6 +1022,8 @@ int Batch::send_batch(void) {	//protected by local mutex
 //pthread_mutex_lock(&this->mutex_batch_local);
 
 // serialize the message to string
+	//this->req_batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+	cout << "send_batch: pack_type = " <<this->req_batch.pack_type()<< endl;
 	if (VIRTUAL) {
 		cout << "send_batch: VIRTUAL" << endl;
 		this->req_batch.set_val(HashUtil::randomString(this->virtualPackSize));
