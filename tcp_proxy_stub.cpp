@@ -215,8 +215,8 @@ int TCPProxy::sendTo(int sock, const void* sendbuf, int sendcount) {
 	if (sentSize < sendcount) {
 
 		//todo: bug prone
-		/*cerr << "TCPProxy::sendTo(): error on BdSendToServer::bsend(...): "
-		 << strerror(errno) << endl;*/
+		cerr << "TCPProxy::sendTo(): error on BdSendToServer::bsend(...): "
+		 << strerror(errno) << endl;
 	}
 
 	return sentSize;
@@ -341,8 +341,12 @@ bool TCPStub::recvsend(ProtoAddr addr, const void *recvbuf) {
 		//e2 = TimeUtil::getTime_msec();
 		//cout << " TCPStub::recvsend: tcp.makeClientSocket(): done, start tcp.sendTo...  "<<endl;//cost: " << e2 - s2<< " ms." << endl;
 		//s2 = TimeUtil::getTime_msec();
-		int sentsize = tcp.sendTo(sock, (void*) result.c_str(), result.size());
-		//cout << "sent = "<<sentsize<<", num_item = "<<  pack.batch_item_size() <<endl;
+//		int size = pack.ByteSize();
+//		void *buffer = malloc(size);
+//		pack.SerializeToArray(buffer, size);
+		int sentsize = tcp.sendTo(sock, (void*) result.c_str(), result.size());//(void*) result.c_str(), result.size()
+
+		cout << "sent = "<<sentsize<<", num_item = "<<  pack.batch_item_size() <<", result.c_str() len = "<<strlen(result.c_str())<<endl;
 		//e2 = TimeUtil::getTime_msec();
 		//cout << " TCPStub::recvsend: tcp.sendTo: cost: " << e2 - s2 << " ms."	<< endl;
 		//cout << " TCPStub::recvsend: tcp.makeClientSocket(): done, tcp.sendTo done "<<endl;

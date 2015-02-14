@@ -533,7 +533,7 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 
 		ZPack res_pack;
 		if (res_pack.ParseFromString(result)) {
-			//cout << "res_pack unpack: true" << endl;
+			cout << "res_pack unpack: true" << endl;
 		}
 
 		if (true == RECORDING_LATENCY) {
@@ -629,31 +629,45 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 	int i = 0;
 	//connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
 	while (CLIENT_RECEIVE_RUN) {
-		//cout << "client_receiver_thread: while(), accept..." << endl;
+		cout
+				<< "client_receiver_thread_virtual: while(CLIENT_RECEIVE_RUN), accept..."
+				<< endl;
+		cout << "before accept..." << endl;
 		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
+		cout << "accept: connfd = " << connfd << endl;
 		string result;
-		//cout<<"before loopedrecv..."<<endl;
+		cout << "before loopedrecv..." << endl;
 		int recvcount = loopedrecv(connfd, NULL, result);
-//		cout << "after loopedrecv, ...recvcount = " << recvcount
-//				<< ", result.size() = "<<result.size()<<endl;
-		double batch_arr_time = TimeUtil::getTime_msec();
+		cout << "after loopedrecv, ...recvcount = " << recvcount
+				<< ", result.size() = " << result.size() << endl;
+		double batch_arr_time = TimeUtil::getTime_usec();
 		ZPack res_pack;
-		if (res_pack.ParseFromString(result)) {
-			//cout << "res_pack unpack: true" << endl;
+
+		if (res_pack.ParsePartialFromString(result)) {//.ParseFromString()
+			cout << "res_pack unpack: true" << endl;
+		}else{
+			cout << "res_pack unpack: false" << endl;
 		}
+		cout<<"res_pack.key() = "<<res_pack.batch_item(0).key()<<endl;
+		cout << "RECORDING_LATENCY = " << RECORDING_LATENCY << endl;
+		if (true == RECORDING_LATENCY) {	//== RECORDING_LATENCY
+			cout << "RECORDING_LATENCY: true " << endl;
 
-		if (true == RECORDING_LATENCY) {
 			if (VIRTUAL) {
-
+				cout
+						<< "client_receiver_thread_virtual: RECORDING_LATENCY: VIRTUAL: "
+						<< endl;
 				TimeStampList reqList =
-						REQ_SUBMIT_TIME.find(res_pack.key())->second;
+						REQ_SUBMIT_TIME.find(res_pack.batch_item(0).key())->second;
 
 				for (list<double>::iterator it = reqList.timeList.begin();
 						it != reqList.timeList.end(); ++it) {
 					req_latency_rec rec;
+					cout << "batch_arr_time:" << batch_arr_time <<", req submit time: "<<*it<< endl;
 					rec.actual_latency = batch_arr_time - *it;
 					rec.qos_latency = 0;
 					REQ_LATENCY_LOG.push_back(rec);
+					cout << "rec.actual_latency:" << rec.actual_latency << endl;
 				}
 
 				batch_latency_record batchRec;
@@ -662,16 +676,16 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 						- *(reqList.timeList.begin()); //the 1st request submit time is right the batch submit time.
 
 				BATCH_LATENCY_LOG.push_back(batchRec);
+				cout << "batchRec.actual_latency: " << batchRec.actual_latency
+						<< endl;
 
 			} else {
-
 				//			cout.precision(17);
 				//			cout << ++i << "th batch, size = " << result.size()
 				//					<<", res_pack.batch_item_size() = "<<res_pack.batch_item_size()
 				//					<< ", started at " << res_pack.batch_start_time()
 				//					<< ", actual latency: "
 				//					<< batch_arr_time - res_pack.batch_start_time() << endl;
-
 				//usleep(100);
 				//res_pack.batch_item_size()
 				//for (int j = 0; j < 1; j++);//do nothing, but help?
@@ -706,9 +720,10 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 //					<< ", val = " << batch_item.val() << endl;
 //		}
 
-		//CLIENT_RECEIVE_RUN = false;
+		CLIENT_RECEIVE_RUN = false;
 		//How to handle received result?
-	}
+	}		//end while
+	cout << "CLIENT_RECEIVE_RUN is set to false, thread exit." << endl;
 	//close(connfd);
 	//return 0;
 }
@@ -889,18 +904,32 @@ int Batch::addToBatch(Request item) { //protected by local mutex
 
 int Batch::addToBatchVirtual(Request item) { //protected by local mutex
 
-	//item.submit_time = TimeUtil::getTime_usec();
+	item.submit_time = TimeUtil::getTime_usec();
 	//REQ_LATENCY_LOG.push_back();
-	this->req_submit_time.timeList.push_back(TimeUtil::getTime_usec()); //don't clear this timeStamp list when doing clearing.
+	pthread_mutex_lock(&this->mutex_batch_local);
+	this->req_submit_time.timeList.push_back(item.submit_time); //don't clear this timeStamp list when doing clearing.
 	if (0 == this->batch_start_time) { //1st item, means the start of a batching.
 		//cout << "1st item, batch starts at" << item.submit_time << endl;
 		this->batch_start_time = item.submit_time;
 		this->req_batch.set_batch_start_time(item.submit_time);
 		this->req_batch.set_key(item.key);
+
+		BatchItem* newItem = this->req_batch.add_batch_item();
+		newItem->set_key(item.key);
+		cout<<"item.key = "<< item.key<<endl;
+		newItem->set_val(item.val);
+		newItem->set_client_ip(item.client_ip);
+		newItem->set_client_port(item.client_port);
+		newItem->set_opcode(item.opcode);
+		newItem->set_qos_latency(item.qos_latency);
+		newItem->set_consistency(item.consistency);
+		newItem->set_submit_time(item.submit_time);
+
 	}
 	double s2 = TimeUtil::getTime_usec();
-	pthread_mutex_lock(&this->mutex_batch_local);
+
 	this->virtualPackSize += item.transferSize;
+	this->batch_num_item++;
 
 //	BatchItem* newItem = this->req_batch.add_batch_item();
 //	newItem->set_key(item.key);
@@ -927,8 +956,8 @@ int Batch::addToBatchVirtual(Request item) { //protected by local mutex
 
 	pthread_mutex_unlock(&this->mutex_batch_local);
 	double end = TimeUtil::getTime_usec();
-	cout << "addToBatch costs: " << end - item.submit_time << " us; in mutex: "
-			<< end - s2 << " us" << endl;
+//	cout << "addToBatch costs: " << end - item.submit_time << " us; in mutex: "
+//			<< end - s2 << " us" << endl;
 	return 0;
 }
 
@@ -987,13 +1016,14 @@ int Batch::clear_batch(void) {
 }
 
 int Batch::send_batch(void) {	//protected by local mutex
-
+	//cout << "send_batch: start" << endl;
 //this->in_sending = true;
 
 //pthread_mutex_lock(&this->mutex_batch_local);
 
 // serialize the message to string
 	if (VIRTUAL) {
+		cout << "send_batch: VIRTUAL" << endl;
 		this->req_batch.set_val(HashUtil::randomString(this->virtualPackSize));
 		//REQ_SUBMIT_TIME.insert(REQ_SUBMIT_TIME.end(), this->req_submit_time.begin(), this->req_submit_time.begin());
 		REQ_SUBMIT_TIME.insert(
@@ -1140,6 +1170,7 @@ int AggregatedSender::req_handler(Request in_req, string & immediate_result) {
 
 		//addToBatch is protected by mutex, so this whole method is safe, don't need another mutex.
 		if (VIRTUAL) {
+			//cout << "req_handler: addToBatchVirtual..." << endl;
 			BATCH_VECTOR_GLOBAL.at(svr_index).addToBatchVirtual(in_req);
 		} else {
 			BATCH_VECTOR_GLOBAL.at(svr_index).addToBatch(in_req);
@@ -1160,8 +1191,8 @@ void* AggregatedSender::batch_monitor_thread(void* argu) {
 	unsigned long batch_size = param->batch_size;
 	cout << "AggregatedSender::batch_monitor_thread: " << " num_item = "
 
-	<< num_item << ", batch_size = " << batch_size << ", policy_index = "
-			<< policy_index << endl << endl;
+	<< num_item << ", batch_size_in_byte limit = " << batch_size
+			<< ", policy_index = " << policy_index << endl << endl;
 	//TCPProxy conn_cache;
 	int i = 1;
 	bool condition = false;

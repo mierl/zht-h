@@ -84,12 +84,12 @@ string HTWorker::run(const char *buf) {
 	zpack.ParseFromString(buff);
 
 	string result;
-
+	cout <<"zpack.pack_type(): "<<zpack.pack_type()<<endl;
 	if(ZPack_Pack_type_BATCH_REQ  == zpack.pack_type()){//batch
 //		cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
-		//cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
-//		cout <<"zpack.key: "<< zpack.key() <<endl;
-//		cout <<"zpack.batch_item(i).val: "<<zpack.batch_item(0).val() << endl<< endl;
+		cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
+		cout <<"zpack.key: "<< zpack.key() <<endl;
+		cout <<"zpack.batch_item(0).val: "<<zpack.batch_item(0).val() << endl<< endl;
 //
 //		cout << "printing batch items received... " << endl;
 //		for(int i =0; i < zpack.batch_item_size(); i++){
@@ -100,6 +100,7 @@ string HTWorker::run(const char *buf) {
 //
 //		result = Const::ZSC_REC_UOPC; // "OK";
 		result = process_batch(zpack);
+		cout<<"Returned result string len result.size() = "<< result.size()<<", cstr() len = "<< strlen(result.c_str())<<endl;
 	}else if(ZPack_Pack_type_SINGLE == zpack.pack_type()){//single
 
 	if (zpack.opcode() == Const::ZSC_OPC_LOOKUP) {
@@ -162,8 +163,8 @@ string HTWorker::run(const char *buf) {
 
 
 string HTWorker::process_batch(const ZPack &zpack){
-//	cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
-	//cout << "Batch contains "<< zpack.batch_item_size() << " items, started at "<< zpack.batch_start_time()<<endl;
+	cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
+	cout << "Batch contains "<< zpack.batch_item_size() << " items, started at "<< zpack.batch_start_time()<<endl;
 //	cout << "iterating over batch items and processing... " << endl;
 
 	ZPack response_pack;
@@ -223,7 +224,7 @@ string HTWorker::process_batch(const ZPack &zpack){
 	response_pack.set_client_ip(response_pack.batch_item(0).client_ip());
 	response_pack.set_client_port(response_pack.batch_item(0).client_port());
 
-
+	cout<<"response_pack.batch_item(0).key() = "<<response_pack.batch_item(0).key()<<endl;
 	string msg = response_pack.SerializeAsString();
 	char *buf = (char*) calloc(_msg_maxsize, sizeof(char));
 	size_t msz = _msg_maxsize;

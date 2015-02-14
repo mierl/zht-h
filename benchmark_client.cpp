@@ -362,7 +362,7 @@ int benchmark_dynamic_batching(void) {
 //	cout << start<<endl;
 //	cout << end<<endl;
 
-	sleep(2);
+	sleep(3);
 	MONITOR_RUN = false;
 	pthread_join(th_monit, NULL);
 
