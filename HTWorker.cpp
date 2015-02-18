@@ -89,7 +89,7 @@ string HTWorker::run(const char *buf) {
 //		cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
 		cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
 		cout <<"zpack.key: "<< zpack.key() <<endl;
-		cout <<"zpack.batch_item(0).val: "<<zpack.batch_item(0).val() << endl<< endl;
+		//cout <<"zpack.batch_item(0).val: "<<zpack.batch_item(0).val() << endl<< endl;
 //
 //		cout << "printing batch items received... " << endl;
 //		for(int i =0; i < zpack.batch_item_size(); i++){
@@ -163,7 +163,7 @@ string HTWorker::run(const char *buf) {
 
 
 string HTWorker::process_batch(const ZPack &zpack){
-	cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
+	//cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
 	cout << "Batch contains "<< zpack.batch_item_size() << " items, started at "<< zpack.batch_start_time()<<endl;
 //	cout << "iterating over batch items and processing... " << endl;
 

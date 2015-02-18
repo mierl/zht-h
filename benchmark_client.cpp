@@ -335,9 +335,10 @@ int benchmark_dynamic_batching(void) {
 //	DynamicBatchMonitorArgs.policy_index = 5;
 	//1: deadline only; 2: deadline + nbatch_size_um_item;
 	//3: deadline + batch_size_bytes; 4: num + size_bytes; 5: num_item only
+	CONDITION_PARAM = DynamicBatchMonitorArgs;
 
-	pthread_t th_monit = sender.start_batch_monitor_thread(
-			DynamicBatchMonitorArgs);
+	//pthread_t th_monit = sender.start_batch_monitor_thread(	DynamicBatchMonitorArgs);
+
 //	cout << "start_batch_monitor_thread done, " << "RAND_REQ_LIST.size() = "
 //			<< RAND_REQ_LIST.size() << ", num_item = "
 //			<< DynamicBatchMonitorArgs.num_item << ", batch_size = "
@@ -364,7 +365,7 @@ int benchmark_dynamic_batching(void) {
 
 	sleep(3);
 	MONITOR_RUN = false;
-	pthread_join(th_monit, NULL);
+	//pthread_join(th_monit, NULL);
 
 	sleep(5);
 	CLIENT_RECEIVE_RUN = false;

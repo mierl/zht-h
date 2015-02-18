@@ -78,6 +78,9 @@ std::map<string, double> BATCH_SUBMIT_TIME; //for calculating batch latency: no 
 list<batch_latency_record> BATCH_LATENCY_LOG;
 bool RECORDING_LATENCY = true;
 float SYS_OVERHEAD = 1;
+double HARD_MAX_LATENCY_LIMIT = 10000; //in usec, after this much time waiting, any batch must go
+monitor_args CONDITION_PARAM;
+
 TCPProxy CACHE_CONNECTION = TCPProxy();
 //Duplicated from ip_proxy_stub.cpp
 int loopedrecv(int sock, void *senderAddr, string &srecv) {
@@ -629,45 +632,45 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 	int i = 0;
 	//connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
 	while (CLIENT_RECEIVE_RUN) {
-		cout
-				<< "client_receiver_thread_virtual: while(CLIENT_RECEIVE_RUN), accept..."
-				<< endl;
-		cout << "before accept..." << endl;
+//		cout
+//				<< "client_receiver_thread_virtual: while(CLIENT_RECEIVE_RUN), accept..."
+//				<< endl;
+		//cout << "before accept..." << endl;
 		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
-		cout << "accept: connfd = " << connfd << endl;
+		//cout << "accept: connfd = " << connfd << endl;
 		string result;
-		cout << "before loopedrecv..." << endl;
+		//cout << "before loopedrecv..." << endl;
 		int recvcount = loopedrecv(connfd, NULL, result);
 		cout << "after loopedrecv, ...recvcount = " << recvcount
 				<< ", result.size() = " << result.size() << endl;
 		double batch_arr_time = TimeUtil::getTime_usec();
 		ZPack res_pack;
 
-		if (res_pack.ParsePartialFromString(result)) {//.ParseFromString()
+		if (res_pack.ParsePartialFromString(result)) {		//.ParseFromString()
 			cout << "res_pack unpack: true" << endl;
-		}else{
+		} else {
 			cout << "res_pack unpack: false" << endl;
 		}
-		cout<<"res_pack.key() = "<<res_pack.batch_item(0).key()<<endl;
-		cout << "RECORDING_LATENCY = " << RECORDING_LATENCY << endl;
+		cout << "res_pack.key() = " << res_pack.batch_item(0).key() << endl;
+		//cout << "RECORDING_LATENCY = " << RECORDING_LATENCY << endl;
 		if (true == RECORDING_LATENCY) {	//== RECORDING_LATENCY
-			cout << "RECORDING_LATENCY: true " << endl;
+			//cout << "RECORDING_LATENCY: true " << endl;
 
 			if (VIRTUAL) {
-				cout
-						<< "client_receiver_thread_virtual: RECORDING_LATENCY: VIRTUAL: "
-						<< endl;
-				TimeStampList reqList =
-						REQ_SUBMIT_TIME.find(res_pack.batch_item(0).key())->second;
+				//cout<< "client_receiver_thread_virtual: RECORDING_LATENCY: VIRTUAL: "<< endl;
+				TimeStampList reqList = REQ_SUBMIT_TIME.find(
+						res_pack.batch_item(0).key())->second;
+
+				//cout << "received: batch_arr_time:" << batch_arr_time<<endl;
 
 				for (list<double>::iterator it = reqList.timeList.begin();
 						it != reqList.timeList.end(); ++it) {
 					req_latency_rec rec;
-					cout << "batch_arr_time:" << batch_arr_time <<", req submit time: "<<*it<< endl;
+					//cout << "received: batch_arr_time:" << batch_arr_time <<", req submit time: "<<*it<< endl;
 					rec.actual_latency = batch_arr_time - *it;
 					rec.qos_latency = 0;
 					REQ_LATENCY_LOG.push_back(rec);
-					cout << "rec.actual_latency:" << rec.actual_latency << endl;
+					//cout << "rec.actual_latency:" << rec.actual_latency << endl;
 				}
 
 				batch_latency_record batchRec;
@@ -783,6 +786,7 @@ int Batch::init(void) {	//
 	this->batch_size_byte = 0;
 	SYS_OVERHEAD = 2; // in ms
 	this->batch_start_time = 0;
+	this->virtualPackSize = 0;
 	//this->in_sending = false;
 
 	return 0;
@@ -814,6 +818,10 @@ bool Batch::check_condition(int policy_index, int max_num_item,
 		cout << "Invalid policy index, index = " << policy_index << endl;
 		break;
 	}
+	if (condition) {
+		cout << "condition checking: true!" << endl;
+	}
+
 	return condition;
 }
 
@@ -857,7 +865,15 @@ bool Batch::check_condition_num_item_batch_size_byte(int max_item,
 }
 
 bool Batch::check_condition_num_item(int max_item) {
-	return (this->batch_num_item >= max_item);
+	if (this->batch_num_item != 0)
+		cout << "Batch::check_condition_num_item:" << this->batch_num_item
+				<< endl;
+	return (this->batch_num_item >= max_item
+			|| (this->batch_num_item > 0
+					&&
+					TimeUtil::getTime_usec() - this->batch_start_time
+							> HARD_MAX_LATENCY_LIMIT));
+
 }
 
 int Batch::addToBatch(Request item) { //protected by local mutex
@@ -916,7 +932,7 @@ int Batch::addToBatchVirtual(Request item) { //protected by local mutex
 
 		BatchItem* newItem = this->req_batch.add_batch_item();
 		newItem->set_key(item.key);
-		cout<<"item.key = "<< item.key<<endl;
+		cout << "item.key = " << item.key << endl;
 		newItem->set_val(item.val);
 		newItem->set_client_ip(item.client_ip);
 		newItem->set_client_port(item.client_port);
@@ -930,6 +946,13 @@ int Batch::addToBatchVirtual(Request item) { //protected by local mutex
 
 	this->virtualPackSize += item.transferSize;
 	this->batch_num_item++;
+	cout << "this->batch_num_item = " << this->batch_num_item << endl;
+
+	bool condition = this->check_condition(CONDITION_PARAM.policy_index, CONDITION_PARAM.num_item,
+			CONDITION_PARAM.batch_size);
+	if(condition){
+		this->send_batch();
+	}
 
 //	BatchItem* newItem = this->req_batch.add_batch_item();
 //	newItem->set_key(item.key);
@@ -1023,9 +1046,10 @@ int Batch::send_batch(void) {	//protected by local mutex
 
 // serialize the message to string
 	//this->req_batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
-	cout << "send_batch: pack_type = " <<this->req_batch.pack_type()<< endl;
+	cout << "send_batch: pack_type = " << this->req_batch.pack_type() << endl;
 	if (VIRTUAL) {
-		cout << "send_batch: VIRTUAL" << endl;
+		cout << "send_batch: VIRTUAL, virtualPackSize = "
+				<< this->virtualPackSize << endl;
 		this->req_batch.set_val(HashUtil::randomString(this->virtualPackSize));
 		//REQ_SUBMIT_TIME.insert(REQ_SUBMIT_TIME.end(), this->req_submit_time.begin(), this->req_submit_time.begin());
 		REQ_SUBMIT_TIME.insert(
@@ -1189,11 +1213,11 @@ void* AggregatedSender::batch_monitor_thread(void* argu) {
 
 //ZHTClient zc;
 	int policy_index = param->policy_index;	//param->policy_index;
-	int num_item = param->num_item;
-	unsigned long batch_size = param->batch_size;
+	int num_item_limit = param->num_item;
+	unsigned long batch_size_limit = param->batch_size;
 	cout << "AggregatedSender::batch_monitor_thread: " << " num_item = "
 
-	<< num_item << ", batch_size_in_byte limit = " << batch_size
+	<< num_item_limit << ", batch_size_in_byte limit = " << batch_size_limit
 			<< ", policy_index = " << policy_index << endl << endl;
 	//TCPProxy conn_cache;
 	int i = 1;
@@ -1207,8 +1231,8 @@ void* AggregatedSender::batch_monitor_thread(void* argu) {
 
 			pthread_mutex_lock(&((*it).mutex_batch_local));
 
-			condition = (*it).check_condition(policy_index, num_item,
-					batch_size);
+			condition = (*it).check_condition(policy_index, num_item_limit,
+					batch_size_limit);
 
 			if (condition) {
 //				cout << "batch_monitor_thread: condition match, sending... batch_deadline  = "

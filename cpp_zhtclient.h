@@ -239,5 +239,6 @@ extern bool RECORDING_LATENCY;
 extern float SYS_OVERHEAD;
 extern TCPProxy CACHE_CONNECTION;
 extern bool VIRTUAL;
+extern monitor_args CONDITION_PARAM;
 //Tony: request for batch processing end.
 #endif /* ZHTCLIENT_H_ */
