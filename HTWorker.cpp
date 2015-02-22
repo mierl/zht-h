@@ -78,10 +78,10 @@ HTWorker::~HTWorker() {
 }
 
 string HTWorker::run(const char *buf) {
-
+	cout<<"received pack length strlen(buf) = "<<strlen(buf)<<endl;
 	ZPack zpack;
 	string buff(buf);
-	zpack.ParseFromString(buff);
+	zpack.ParseFromString(buff); //ParseFromArray(void*,int)
 
 	string result;
 	cout <<"zpack.pack_type(): "<<zpack.pack_type()<<endl;
@@ -89,6 +89,8 @@ string HTWorker::run(const char *buf) {
 //		cout << "HTWrorker::run(): ZPack_Pack_type_BATCH_REQ received."<< endl;
 		cout << "Batch contains "<< zpack.batch_item_size() << " items."<<endl;
 		cout <<"zpack.key: "<< zpack.key() <<endl;
+		cout <<"zpack.key: zpack.client_ip() = "<< zpack.client_ip() <<endl;
+		cout <<"zpack.key: zpack.client_port() = "<< zpack.client_port() << endl;
 		//cout <<"zpack.batch_item(0).val: "<<zpack.batch_item(0).val() << endl<< endl;
 //
 //		cout << "printing batch items received... " << endl;

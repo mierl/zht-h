@@ -306,7 +306,7 @@ bool TCPStub::recvsend(ProtoAddr addr, const void *recvbuf) {
 	HTWorker htw;
 #endif
 	//s2 = TimeUtil::getTime_msec();
-	string result = htw.run(recvstr.c_str());
+	string result = htw.run((const char*)recvbuf);//recvstr.c_str()
 	//e2 = TimeUtil::getTime_msec();
 	//cout << " TCPStub::recvsend: htw.run: cost: " << e2 - s2 << " ms." << endl;
 	//cout << " TCPStub::recvsend: htw.run() done "<<endl;

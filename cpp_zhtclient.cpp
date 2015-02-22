@@ -78,7 +78,7 @@ std::map<string, double> BATCH_SUBMIT_TIME; //for calculating batch latency: no 
 list<batch_latency_record> BATCH_LATENCY_LOG;
 bool RECORDING_LATENCY = true;
 float SYS_OVERHEAD = 1;
-double HARD_MAX_LATENCY_LIMIT = 10000; //in usec, after this much time waiting, any batch must go
+double HARD_MAX_LATENCY_LIMIT = 100000; //in usec, after this much time waiting, any batch must go
 monitor_args CONDITION_PARAM;
 
 TCPProxy CACHE_CONNECTION = TCPProxy();
@@ -156,6 +156,8 @@ int ZHTClient::init(const string& zhtConf, const string& neighborConf) {
 	MSG_MAXSIZE = Env::get_msg_maxsize();
 	_msg_maxsize = Env::get_msg_maxsize();
 
+	BATCH_LATENCY_LOG.clear();
+	REQ_LATENCY_LOG.clear();
 	_proxy = ProxyStubFactory::createProxy();
 
 	if (_proxy == 0)
@@ -567,7 +569,9 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 			batch_rec.num_item = res_pack.batch_item_size();
 			batch_rec.actual_latency = batch_arr_time
 					- res_pack.batch_start_time();
+
 			BATCH_LATENCY_LOG.push_back(batch_rec);
+
 		}
 
 //		cout << "Client received a batch, contains " << res.batch_item_size()
@@ -635,9 +639,9 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 //		cout
 //				<< "client_receiver_thread_virtual: while(CLIENT_RECEIVE_RUN), accept..."
 //				<< endl;
-		//cout << "before accept..." << endl;
+		cout << "before accept..." << endl;
 		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
-		//cout << "accept: connfd = " << connfd << endl;
+		cout << "accept: connfd = " << connfd << endl;
 		string result;
 		//cout << "before loopedrecv..." << endl;
 		int recvcount = loopedrecv(connfd, NULL, result);
@@ -654,14 +658,14 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 		cout << "res_pack.key() = " << res_pack.batch_item(0).key() << endl;
 		//cout << "RECORDING_LATENCY = " << RECORDING_LATENCY << endl;
 		if (true == RECORDING_LATENCY) {	//== RECORDING_LATENCY
-			//cout << "RECORDING_LATENCY: true " << endl;
+			cout << "VIRTUAL = " << VIRTUAL<< endl;
 
 			if (VIRTUAL) {
-				//cout<< "client_receiver_thread_virtual: RECORDING_LATENCY: VIRTUAL: "<< endl;
+				cout<< "client_receiver_thread_virtual: res_pack.batch_item(0).key() =  "<<res_pack.batch_item(0).key()<< endl;
 				TimeStampList reqList = REQ_SUBMIT_TIME.find(
 						res_pack.batch_item(0).key())->second;
 
-				//cout << "received: batch_arr_time:" << batch_arr_time<<endl;
+				cout << "received: batch_arr_time:" << batch_arr_time<<endl;
 
 				for (list<double>::iterator it = reqList.timeList.begin();
 						it != reqList.timeList.end(); ++it) {
@@ -677,10 +681,10 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 				batchRec.num_item = 0;
 				batchRec.actual_latency = batch_arr_time
 						- *(reqList.timeList.begin()); //the 1st request submit time is right the batch submit time.
-
+				cout << "------------------------------------------------ before push: batch log size = "<<BATCH_LATENCY_LOG.size()<<endl;
 				BATCH_LATENCY_LOG.push_back(batchRec);
-				cout << "batchRec.actual_latency: " << batchRec.actual_latency
-						<< endl;
+				cout << "------------------------------------------------ after push: batch log size = "<<BATCH_LATENCY_LOG.size()<<endl;
+				//cout << "batchRec.actual_latency: " << batchRec.actual_latency<< endl;
 
 			} else {
 				//			cout.precision(17);
@@ -723,7 +727,7 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 //					<< ", val = " << batch_item.val() << endl;
 //		}
 
-		CLIENT_RECEIVE_RUN = false;
+		//CLIENT_RECEIVE_RUN = false;
 		//How to handle received result?
 	}		//end while
 	cout << "CLIENT_RECEIVE_RUN is set to false, thread exit." << endl;
@@ -781,6 +785,8 @@ int Batch::init(void) {	//
 	this->req_batch.Clear();
 	this->req_batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
 	//this->req_batch_swap.set_pack_type(ZPack_Pack_type_BATCH_REQ);
+	//this->req_batch.set_client_ip();
+	//this->req_batch.set_client_port();
 	this->batch_deadline = TIME_MAX;
 	this->batch_num_item = 0;
 	this->batch_size_byte = 0;
@@ -818,9 +824,9 @@ bool Batch::check_condition(int policy_index, int max_num_item,
 		cout << "Invalid policy index, index = " << policy_index << endl;
 		break;
 	}
-	if (condition) {
-		cout << "condition checking: true!" << endl;
-	}
+//	if (condition) {
+//		cout << "condition checking: true!" << endl;
+//	}
 
 	return condition;
 }
@@ -865,9 +871,9 @@ bool Batch::check_condition_num_item_batch_size_byte(int max_item,
 }
 
 bool Batch::check_condition_num_item(int max_item) {
-	if (this->batch_num_item != 0)
-		cout << "Batch::check_condition_num_item:" << this->batch_num_item
-				<< endl;
+	//if (this->batch_num_item != 0)
+		//cout << "Batch::check_condition_num_item:" << this->batch_num_item	<< endl;
+
 	return (this->batch_num_item >= max_item
 			|| (this->batch_num_item > 0
 					&&
@@ -884,6 +890,8 @@ int Batch::addToBatch(Request item) { //protected by local mutex
 		//cout << "1st item, batch starts at" << item.submit_time << endl;
 		this->batch_start_time = item.submit_time;
 		this->req_batch.set_batch_start_time(item.submit_time);
+		//this->req_batch.set_client_ip(item.client_ip);
+		//this->req_batch.set_client_port(item.client_port);
 	}
 	double s2 = TimeUtil::getTime_usec();
 	pthread_mutex_lock(&this->mutex_batch_local);
@@ -932,8 +940,12 @@ int Batch::addToBatchVirtual(Request item) { //protected by local mutex
 
 		BatchItem* newItem = this->req_batch.add_batch_item();
 		newItem->set_key(item.key);
-		cout << "item.key = " << item.key << endl;
+		//cout << "item.key = " << item.key << endl;
 		newItem->set_val(item.val);
+
+		//cout<<"item.client_ip: "<<item.client_ip<<endl;
+		//cout<<"item.client_port: "<<item.client_port<<endl;
+
 		newItem->set_client_ip(item.client_ip);
 		newItem->set_client_port(item.client_port);
 		newItem->set_opcode(item.opcode);
@@ -941,12 +953,15 @@ int Batch::addToBatchVirtual(Request item) { //protected by local mutex
 		newItem->set_consistency(item.consistency);
 		newItem->set_submit_time(item.submit_time);
 
+		this->req_batch.set_client_ip(item.client_ip);
+		this->req_batch.set_client_port(item.client_port);
+
 	}
 	double s2 = TimeUtil::getTime_usec();
 
 	this->virtualPackSize += item.transferSize;
 	this->batch_num_item++;
-	cout << "this->batch_num_item = " << this->batch_num_item << endl;
+	//cout << "this->batch_num_item = " << this->batch_num_item << endl;
 
 	bool condition = this->check_condition(CONDITION_PARAM.policy_index, CONDITION_PARAM.num_item,
 			CONDITION_PARAM.batch_size);
@@ -1046,10 +1061,10 @@ int Batch::send_batch(void) {	//protected by local mutex
 
 // serialize the message to string
 	//this->req_batch.set_pack_type(ZPack_Pack_type_BATCH_REQ);
-	cout << "send_batch: pack_type = " << this->req_batch.pack_type() << endl;
+	//cout << "send_batch: pack_type = " << this->req_batch.pack_type() << endl;
 	if (VIRTUAL) {
-		cout << "send_batch: VIRTUAL, virtualPackSize = "
-				<< this->virtualPackSize << endl;
+//		cout << "send_batch: VIRTUAL, virtualPackSize = "
+//				<< this->virtualPackSize << endl;
 		this->req_batch.set_val(HashUtil::randomString(this->virtualPackSize));
 		//REQ_SUBMIT_TIME.insert(REQ_SUBMIT_TIME.end(), this->req_submit_time.begin(), this->req_submit_time.begin());
 		REQ_SUBMIT_TIME.insert(
@@ -1078,9 +1093,9 @@ int Batch::send_batch(void) {	//protected by local mutex
 	int sock = CACHE_CONNECTION.getSockCached(he.host, he.port);
 	//cout << "batch info: pack_type =  " << this->req_batch.pack_type()
 	//		<< ", ByteSize = " << this->req_batch.ByteSize() << endl;
-
+	//cout<<"Before send: this->req_batch.client_ip(): "<<this->req_batch.client_ip()<<endl;
 	int ret = CACHE_CONNECTION.sendTo(sock, (void*) msg.c_str(), msg.size());
-
+	//cout<<"sent ret bytes: "<<ret<<endl;
 	double e1 = TimeUtil::getTime_usec();
 
 	while (ret < 0) {
@@ -1101,12 +1116,12 @@ int Batch::send_batch(void) {	//protected by local mutex
 	//Copy a batch of request submit time to global space for later saving.
 
 	this->clear_batch();
-	double e2 = TimeUtil::getTime_usec();
-	cout << "send_batch total cost: " << e2 - s1 << " us, prepare cost: "
-			<< s2 - s1 << " us, pure send cost " << e1 - s2
-			<< " us, cleanup cost: " << e2 - e1 << " us" << endl;
-	cout << "serieslizing costs " << s1_5 - s1 << " us" << endl;
-	cout << " getHostEntityByKey costs " << s2 - s1_7 << " us" << endl;
+//	double e2 = TimeUtil::getTime_usec();
+//	cout << "send_batch total cost: " << e2 - s1 << " us, prepare cost: "
+//			<< s2 - s1 << " us, pure send cost " << e1 - s2
+//			<< " us, cleanup cost: " << e2 - e1 << " us" << endl;
+	//cout << "serieslizing costs " << s1_5 - s1 << " us" << endl;
+	//cout << " getHostEntityByKey costs " << s2 - s1_7 << " us" << endl;
 	//usleep(500000);
 
 //pthread_mutex_unlock(&this->mutex_batch_local);
