@@ -48,6 +48,7 @@
 #include "ZHTUtil.h"
 #include <unistd.h>
 #include <signal.h>
+#include <sys/select.h>
 
 //include <gsl/gsl_fit.h> //For linear regression
 using namespace iit::datasys::zht::dm;
@@ -510,6 +511,7 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 	if (listen(svrSock, 8000) < 0) {
 		printf("listen error\n");
 	}
+
 	//printf("listen \n");
 
 	/* make the socket reusable */
@@ -523,13 +525,15 @@ void * ZHTClient::client_receiver_thread(void* argum) {
 	socklen_t in_len = sizeof(struct sockaddr);
 	int infd;
 	struct sockaddr_in client_addr;
+	socklen_t len_addr = sizeof(client_addr);
 	socklen_t clilen;
 	int connfd = -1;
 	int i = 0;
 	//connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
 	while (CLIENT_RECEIVE_RUN) {
 		//cout << "client_receiver_thread: while(), accept..." << endl;
-		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
+		len_addr = sizeof(client_addr);
+		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &len_addr);
 		string result;
 		//cout<<"before loopedrecv..."<<endl;
 		int recvcount = loopedrecv(connfd, NULL, result);
@@ -635,102 +639,151 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 	int connfd = -1;
 	int i = 0;
 	//connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
+
+	//int s1, s2, n;
+
+	//-------------------
+
 	while (CLIENT_RECEIVE_RUN) {
 //		cout
 //				<< "client_receiver_thread_virtual: while(CLIENT_RECEIVE_RUN), accept..."
 //				<< endl;
-		cout << "before accept..." << endl;
-		connfd = accept(svrSock, (struct sockaddr *) &client_addr, &clilen);
-		cout << "accept: connfd = " << connfd << endl;
-		string result;
-		//cout << "before loopedrecv..." << endl;
-		int recvcount = loopedrecv(connfd, NULL, result);
-		cout << "after loopedrecv, ...recvcount = " << recvcount
-				<< ", result.size() = " << result.size() << endl;
-		double batch_arr_time = TimeUtil::getTime_usec();
-		ZPack res_pack;
 
-		if (res_pack.ParsePartialFromString(result)) {		//.ParseFromString()
-			cout << "res_pack unpack: true" << endl;
+		//Prepare for select()
+		fd_set readfds;
+		struct timeval tv;
+		tv.tv_sec = 1;
+		tv.tv_usec = 0;
+		FD_ZERO(&readfds);
+		FD_SET(svrSock, &readfds);
+		int rv = select(svrSock + 1, &readfds, NULL, NULL, &tv);
+
+		if (rv == -1) {
+			perror("select"); // error occurred in select()
+			continue;
+		} else if (0 == rv) {
+			//cout << "time out, continue while(CLIENT_RECEIVE_RUN)" << endl;
+			continue;//time out, break while
 		} else {
-			cout << "res_pack unpack: false" << endl;
-		}
-		cout << "res_pack.key() = " << res_pack.batch_item(0).key() << endl;
-		//cout << "RECORDING_LATENCY = " << RECORDING_LATENCY << endl;
-		if (true == RECORDING_LATENCY) {	//== RECORDING_LATENCY
-			cout << "VIRTUAL = " << VIRTUAL<< endl;
+//			for(int i=0; i<svrSock + 1; ++i){
+//				if(svrSock == i){
+//
+//				}
+//			}
+			{ //rv>0, data is ready to be read
+				cout << "rv > 0, data is ready to be read..." << endl;
+				clilen = sizeof(client_addr);
+				connfd = accept(svrSock, (struct sockaddr *) &client_addr,
+						&clilen);
+				if (0 > connfd) {
+					 printf("error on accept: %s\n", strerror(errno));
+					cout << "connfd = " << connfd << ", svrSock =  "<< svrSock <<endl;
+					connfd = svrSock;
+					//continue;
+				}
+				cout << "accept: connfd = " << connfd << ", svrSock = "
+						<< svrSock << endl;
+				string result;
+				cout << "before loopedrecv..." << endl;
+				int recvcount = loopedrecv(connfd, NULL, result);
 
-			if (VIRTUAL) {
-				cout<< "client_receiver_thread_virtual: res_pack.batch_item(0).key() =  "<<res_pack.batch_item(0).key()<< endl;
-				TimeStampList reqList = REQ_SUBMIT_TIME.find(
-						res_pack.batch_item(0).key())->second;
+				cout << "after loopedrecv, ...recvcount = " << recvcount
+						<< ", result.size() = " << result.size() << endl;
+				double batch_arr_time = TimeUtil::getTime_usec();
+				ZPack res_pack;
 
-				cout << "received: batch_arr_time:" << batch_arr_time<<endl;
+				if (res_pack.ParsePartialFromString(result)) {//.ParseFromString()
+					cout << "res_pack unpack: true" << endl;
+				} else {
+					cout << "res_pack unpack: false" << endl;
+				}
+				cout << "res_pack.key() = " << res_pack.batch_item(0).key()
+						<< endl;
+				//cout << "RECORDING_LATENCY = " << RECORDING_LATENCY << endl;
+				if (true == RECORDING_LATENCY) {	//== RECORDING_LATENCY
+					//cout << "VIRTUAL = " << VIRTUAL << endl;
 
-				for (list<double>::iterator it = reqList.timeList.begin();
-						it != reqList.timeList.end(); ++it) {
-					req_latency_rec rec;
-					//cout << "received: batch_arr_time:" << batch_arr_time <<", req submit time: "<<*it<< endl;
-					rec.actual_latency = batch_arr_time - *it;
-					rec.qos_latency = 0;
-					REQ_LATENCY_LOG.push_back(rec);
-					//cout << "rec.actual_latency:" << rec.actual_latency << endl;
+					if (VIRTUAL) {
+						cout
+								<< "client_receiver_thread_virtual: res_pack.batch_item(0).key() =  "
+								<< res_pack.batch_item(0).key() << endl;
+						TimeStampList reqList = REQ_SUBMIT_TIME.find(
+								res_pack.batch_item(0).key())->second;
+
+						cout << "received: batch_arr_time:" << batch_arr_time
+								<< endl;
+
+						for (list<double>::iterator it =
+								reqList.timeList.begin();
+								it != reqList.timeList.end(); ++it) {
+							req_latency_rec rec;
+							//cout << "received: batch_arr_time:" << batch_arr_time <<", req submit time: "<<*it<< endl;
+							rec.actual_latency = batch_arr_time - *it;
+							rec.qos_latency = 0;
+							REQ_LATENCY_LOG.push_back(rec);
+							//cout << "rec.actual_latency:" << rec.actual_latency << endl;
+						}
+
+						batch_latency_record batchRec;
+						batchRec.num_item = 0;
+						batchRec.actual_latency = batch_arr_time
+								- *(reqList.timeList.begin()); //the 1st request submit time is right the batch submit time.
+						cout
+								<< "------------------------------------------------ before push: batch log size = "
+								<< BATCH_LATENCY_LOG.size() << endl;
+						BATCH_LATENCY_LOG.push_back(batchRec);
+						cout
+								<< "------------------------------------------------ after push: batch log size = "
+								<< BATCH_LATENCY_LOG.size() << endl;
+						//cout << "batchRec.actual_latency: " << batchRec.actual_latency<< endl;
+
+					} else {
+						//			cout.precision(17);
+						//			cout << ++i << "th batch, size = " << result.size()
+						//					<<", res_pack.batch_item_size() = "<<res_pack.batch_item_size()
+						//					<< ", started at " << res_pack.batch_start_time()
+						//					<< ", actual latency: "
+						//					<< batch_arr_time - res_pack.batch_start_time() << endl;
+						//usleep(100);
+						//res_pack.batch_item_size()
+						//for (int j = 0; j < 1; j++);//do nothing, but help?
+
+						for (int j = 0; j < res_pack.batch_item_size(); j++) { //recording latency for analysis
+							BatchItem batch_item = res_pack.batch_item(j);
+							//				cout << "item_" << j + 1 << ", key = " << batch_item.key()
+							//						<< ", val = " << batch_item.val() << endl;
+							request_latency_record rec;
+							rec.qos_latency = batch_item.qos_latency();
+							rec.actual_latency = batch_arr_time
+									- batch_item.submit_time();
+							//cout<< "submit_time: " << batch_item.submit_time()<<endl;
+							REQ_LATENCY_LOG.push_back(rec);
+						}
+
+						batch_latency_record batch_rec;
+						batch_rec.num_item = res_pack.batch_item_size();
+						batch_rec.actual_latency = batch_arr_time
+								- res_pack.batch_start_time();
+						BATCH_LATENCY_LOG.push_back(batch_rec);
+					}
+
 				}
 
-				batch_latency_record batchRec;
-				batchRec.num_item = 0;
-				batchRec.actual_latency = batch_arr_time
-						- *(reqList.timeList.begin()); //the 1st request submit time is right the batch submit time.
-				cout << "------------------------------------------------ before push: batch log size = "<<BATCH_LATENCY_LOG.size()<<endl;
-				BATCH_LATENCY_LOG.push_back(batchRec);
-				cout << "------------------------------------------------ after push: batch log size = "<<BATCH_LATENCY_LOG.size()<<endl;
-				//cout << "batchRec.actual_latency: " << batchRec.actual_latency<< endl;
+				//		cout << "Client received a batch, contains " << res.batch_item_size()
+				//				<< " items" << endl;
 
-			} else {
-				//			cout.precision(17);
-				//			cout << ++i << "th batch, size = " << result.size()
-				//					<<", res_pack.batch_item_size() = "<<res_pack.batch_item_size()
-				//					<< ", started at " << res_pack.batch_start_time()
-				//					<< ", actual latency: "
-				//					<< batch_arr_time - res_pack.batch_start_time() << endl;
-				//usleep(100);
-				//res_pack.batch_item_size()
-				//for (int j = 0; j < 1; j++);//do nothing, but help?
+				//		for (int i = 0; i < res.batch_item_size(); i++) {
+				//			BatchItem batch_item = res.batch_item(i);
+				//			cout << "item_" << i + 1 << ", key = " << batch_item.key()
+				//					<< ", val = " << batch_item.val() << endl;
+				//		}
 
-				for (int j = 0; j < res_pack.batch_item_size(); j++) { //recording latency for analysis
-					BatchItem batch_item = res_pack.batch_item(j);
-					//				cout << "item_" << j + 1 << ", key = " << batch_item.key()
-					//						<< ", val = " << batch_item.val() << endl;
-					request_latency_record rec;
-					rec.qos_latency = batch_item.qos_latency();
-					rec.actual_latency = batch_arr_time
-							- batch_item.submit_time();
-					//cout<< "submit_time: " << batch_item.submit_time()<<endl;
-					REQ_LATENCY_LOG.push_back(rec);
-				}
-
-				batch_latency_record batch_rec;
-				batch_rec.num_item = res_pack.batch_item_size();
-				batch_rec.actual_latency = batch_arr_time
-						- res_pack.batch_start_time();
-				BATCH_LATENCY_LOG.push_back(batch_rec);
+				//CLIENT_RECEIVE_RUN = false;
+				//How to handle received result?
 			}
-
 		}
-
-//		cout << "Client received a batch, contains " << res.batch_item_size()
-//				<< " items" << endl;
-
-//		for (int i = 0; i < res.batch_item_size(); i++) {
-//			BatchItem batch_item = res.batch_item(i);
-//			cout << "item_" << i + 1 << ", key = " << batch_item.key()
-//					<< ", val = " << batch_item.val() << endl;
-//		}
-
-		//CLIENT_RECEIVE_RUN = false;
-		//How to handle received result?
 	}		//end while
-	cout << "CLIENT_RECEIVE_RUN is set to false, thread exit." << endl;
+	//cout << "CLIENT_RECEIVE_RUN is set to false, thread exit." << endl;
 	//close(connfd);
 	//return 0;
 }
@@ -872,12 +925,11 @@ bool Batch::check_condition_num_item_batch_size_byte(int max_item,
 
 bool Batch::check_condition_num_item(int max_item) {
 	//if (this->batch_num_item != 0)
-		//cout << "Batch::check_condition_num_item:" << this->batch_num_item	<< endl;
+	//cout << "Batch::check_condition_num_item:" << this->batch_num_item	<< endl;
 
 	return (this->batch_num_item >= max_item
 			|| (this->batch_num_item > 0
-					&&
-					TimeUtil::getTime_usec() - this->batch_start_time
+					&& TimeUtil::getTime_usec() - this->batch_start_time
 							> HARD_MAX_LATENCY_LIMIT));
 
 }
@@ -962,10 +1014,10 @@ int Batch::addToBatchVirtual(Request item) { //protected by local mutex
 	this->virtualPackSize += item.transferSize;
 	this->batch_num_item++;
 	//cout << "this->batch_num_item = " << this->batch_num_item << endl;
-
-	bool condition = this->check_condition(CONDITION_PARAM.policy_index, CONDITION_PARAM.num_item,
-			CONDITION_PARAM.batch_size);
-	if(condition){
+	usleep(2);
+	bool condition = this->check_condition(CONDITION_PARAM.policy_index,
+			CONDITION_PARAM.num_item, CONDITION_PARAM.batch_size);
+	if (condition) {
 		this->send_batch();
 	}
 
