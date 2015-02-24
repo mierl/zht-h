@@ -643,15 +643,15 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 	//int s1, s2, n;
 
 	//-------------------
-
+	fd_set readfds;
+	struct timeval tv;
 	while (CLIENT_RECEIVE_RUN) {
 //		cout
 //				<< "client_receiver_thread_virtual: while(CLIENT_RECEIVE_RUN), accept..."
 //				<< endl;
 
 		//Prepare for select()
-		fd_set readfds;
-		struct timeval tv;
+
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 		FD_ZERO(&readfds);
@@ -781,6 +781,7 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 				//CLIENT_RECEIVE_RUN = false;
 				//How to handle received result?
 			}
+			continue;
 		}
 	}		//end while
 	//cout << "CLIENT_RECEIVE_RUN is set to false, thread exit." << endl;

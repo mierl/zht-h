@@ -369,16 +369,15 @@ int benchmark_dynamic_batching(void) {
 
 	sleep(5);
 	CLIENT_RECEIVE_RUN = false;
-	cout << "Cancel receiver thread now..." << endl;
-	//pthread_cancel(th_recv);
-	pthread_join(th_recv, NULL);//wait... won't run into here because it still wait at accept()
+	cout << "Join receiver thread now..." << endl;
 	if (true == RECORDING_LATENCY) {		//write latency log to a file.
 		cout << "Writing latency logs ...";
 		writeReqLogToFile(LogFilePathPrefix, REQ_LATENCY_LOG);
 		writeBatchLogToFile(LogFilePathPrefix, BATCH_LATENCY_LOG);
 		cout<<"done."<< endl;
 	}
-
+	//pthread_cancel(th_recv);
+	pthread_join(th_recv, NULL);//wait... won't run into here because it still wait at accept()
 	return 0;
 }
 
