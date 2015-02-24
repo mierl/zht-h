@@ -787,6 +787,7 @@ void * ZHTClient::client_receiver_thread_virtual(void* argum) {
 	//cout << "CLIENT_RECEIVE_RUN is set to false, thread exit." << endl;
 	//close(connfd);
 	//return 0;
+	pthread_exit(NULL);
 }
 
 int results_handler(string result) {
