@@ -378,6 +378,8 @@ int benchmark_dynamic_batching(void) {
 	}
 	//pthread_cancel(th_recv);
 	//pthread_join(th_recv, NULL);//wait... won't run into here because it still wait at accept()
+    cout<<"Killing receiver thread..."<< endl;
+    pthread_kill(th_recv, SIGINT);
 	return 0;
 }
 
